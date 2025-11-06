@@ -8,6 +8,7 @@ A structured project management system for Claude Code that provides organized w
 - **Research Workflow**: Deep research with extended thinking, organized into multi-file documentation
 - **PRD Creation**: Comprehensive Product Requirements Documents with all critical sections
 - **Implementation Planning**: Detailed, phase-based plans with sequential numbering and tracking
+- **Iterative Plan Refinement**: Refine existing plans with extended thinking while preserving structure and number
 - **Plan Lifecycle**: Move plans through draft → in-progress → completed stages
 - **Language Agnostic**: Works with any programming language or framework
 - **Git-Friendly**: All files are markdown for easy version control
@@ -69,7 +70,12 @@ A structured project management system for Claude Code that provides organized w
    Backend is Express.js with PostgreSQL. We have 3 weeks for initial release.
    ```
 
-5. **Move plan to in-progress** when ready to implement:
+5. **Refine the plan** if needed (optional but recommended):
+   ```bash
+   /dr-plan @_claude/plans/draft/001-authentication-system.md Add more detail to Phase 3 about password hashing and add security best practices section
+   ```
+
+6. **Move plan to in-progress** when ready to implement:
    ```bash
    /dr-move-plan 001 in-progress
    ```
@@ -181,9 +187,9 @@ Need templates for common notification types and A/B testing capability.
 
 ### `/dr-plan`
 
-Creates detailed implementation plan with sequential numbering, phases, and tasks.
+Creates detailed implementation plan OR refines existing plan using extended thinking. Supports dual-mode operation.
 
-**Usage:**
+**CREATE Mode - Usage:**
 ```bash
 /dr-plan [detailed implementation context - 10-15 lines]
 ```
@@ -203,7 +209,17 @@ Creates detailed implementation plan with sequential numbering, phases, and task
 /dr-plan
 ```
 
-**Example:**
+**REFINE Mode - Usage:**
+```bash
+/dr-plan @plan-file [refinement request]
+```
+
+**With flag to skip confirmation:**
+```bash
+/dr-plan @plan-file [refinement request] --no-confirm
+```
+
+**CREATE Example:**
 ```bash
 /dr-plan Implement real-time notification system as specified in PRD.
 @_claude/prd/notification-system.md
@@ -215,7 +231,22 @@ Phase 3: Email digests and admin dashboard (1 week)
 Must support 10k concurrent WebSocket connections initially.
 ```
 
-**What it does:**
+**REFINE Examples:**
+```bash
+# Add OAuth support to existing auth plan
+/dr-plan @_claude/plans/draft/001-authentication-system.md Add OAuth 2.0 support with Google and GitHub providers
+
+# Add more detail to specific phase
+/dr-plan @_claude/plans/draft/001-auth.md Add detailed code examples and security best practices to Phase 3
+
+# Minor adjustment to in-progress plan
+/dr-plan @_claude/plans/in_progress/003-database-migration.md Add Redis dependency to requirements section
+
+# Skip confirmation for quick updates
+/dr-plan @_claude/plans/draft/002-api.md Fix typo in Phase 2 tasks --no-confirm
+```
+
+**CREATE Mode - What it does:**
 - Automatically assigns sequential plan number (001, 002, 003, etc.)
 - Scans ALL plan folders (draft, in_progress, completed) to find the highest existing number
 - If PRD referenced via `@path`, reads and analyzes it
@@ -230,6 +261,20 @@ Must support 10k concurrent WebSocket connections initially.
   - Rollback Plan
   - Dependencies
   - Success Metrics
+
+**REFINE Mode - What it does:**
+- **Reads existing plan**: Analyzes current structure, phases, and content
+- **Uses extended thinking**: Deeply analyzes both the existing plan and your refinement request
+- **Generates refined plan**: Applies requested changes intelligently while preserving what works
+- **Creates automatic backup**: Saves `.{filename}.backup` before any changes
+- **Shows diff summary**: Lists additions, modifications, and deletions
+- **Requires confirmation**: Shows changes and asks y/n/diff (unless --no-confirm)
+- **Status-aware behavior**:
+  - **Draft plans**: All changes allowed
+  - **In-progress plans**: Warns about major changes, suggests moving back to draft for restructuring
+  - **Completed plans**: Refuses to modify (historical records)
+- **Preserves metadata**: Keeps plan number, slug, and core structure
+- **Adds refinement note**: Documents when and why plan was refined
 
 **Plan Numbering:**
 - Plans are numbered sequentially: 001, 002, 003, ..., 999, 1000, ...
@@ -332,7 +377,17 @@ your-project/
    - Automatically numbered (001, 002, etc.)
    - Review and refine the plan
 
-4. **Implementation Phase**
+4. **Refinement Phase** (optional but recommended)
+   ```bash
+   /dr-plan @_claude/plans/draft/[plan-file].md [refinement request]
+   ```
+   - Add missing details or requirements
+   - Enhance specific phases
+   - Adjust time estimates
+   - Add security considerations
+   - Can be repeated multiple times
+
+5. **Implementation Phase**
    ```bash
    /dr-move-plan [plan-name] in-progress
    ```
@@ -340,7 +395,14 @@ your-project/
    - Now ready to implement
    - **IMPORTANT**: Only implement plans in `in_progress/`!
 
-5. **Completion Phase**
+6. **Minor Adjustments During Implementation** (as needed)
+   ```bash
+   /dr-plan @_claude/plans/in_progress/[plan-file].md [minor changes]
+   ```
+   - Small adjustments only (dependencies, clarifications)
+   - Major changes should move plan back to draft first
+
+7. **Completion Phase**
    ```bash
    /dr-move-plan [plan-name] completed
    ```
@@ -404,6 +466,9 @@ Use Socket.io with Redis adapter for multi-server support.
 Existing stack: Express.js backend, React frontend, PostgreSQL database.
 Have 4 weeks for initial release with basic features.
 
+# Review and refine if needed
+/dr-plan @_claude/plans/draft/001-realtime-chat.md Add detailed error handling strategy and enhance security phase
+
 # Start implementation
 /dr-move-plan realtime-chat in-progress
 
@@ -453,10 +518,13 @@ MIT License - see LICENSE file for details
 
 - **1.0.0** - Initial release
   - Five core commands: init, research, prd, plan, move-plan
+  - Dual-mode commands for PRDs and plans (create or refine)
   - Sequential plan numbering
+  - Iterative refinement with extended thinking
   - PRD-plan linking via file references
   - Extended thinking integration
   - Language-agnostic design
+  - Automatic backups and safety confirmations
 
 ## Support
 

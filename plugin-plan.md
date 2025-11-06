@@ -264,8 +264,8 @@ project-mgmt-plugin/
 ├── commands/
 │   ├── dr-init.md                           # Initialize/update project structure
 │   ├── dr-research.md                       # Conduct structured research
-│   ├── dr-prd.md                            # Create PRD from template
-│   ├── dr-plan.md                           # Create implementation plan
+│   ├── dr-prd.md                            # Create or refine PRD (dual-mode)
+│   ├── dr-plan.md                           # Create or refine plan (dual-mode)
 │   └── dr-move-plan.md                      # Move plan between stages
 ├── templates/
 │   ├── CLAUDE.md.template                   # Project structure instructions
@@ -491,33 +491,70 @@ Next steps:
 
 ### 3. Slash Command: `/dr-prd`
 
-**Purpose:** Create comprehensive Product Requirement Document with thoughtful analysis of feature requirements
+**Purpose:** Create comprehensive Product Requirement Document OR refine existing PRD with thoughtful analysis
 
 **Location:** `commands/dr-prd.md`
 
 **Frontmatter:**
 ```yaml
 ---
-description: Create a comprehensive PRD with extended thinking
-argument-hint: [detailed feature description and context - can be multi-line]
-allowed-tools: Read, Write
+description: Create or refine a comprehensive PRD with extended thinking
+argument-hint: [feature description OR @prd-file [refinement request]] [--no-confirm]
+allowed-tools: Read, Write, Edit, Bash(ls:*), Bash(cp:*), Grep
 ---
 ```
 
+**Dual-Mode Operation:**
+This command operates in two modes based on the arguments:
+1. **CREATE mode**: When no file reference is provided, creates a new PRD
+2. **REFINE mode**: When `@path/to/prd.md` is provided, refines existing PRD
+
 **Usage:**
+
+**CREATE Mode:**
 - **With prompt:** `/dr-prd [full feature description and context]` (supports multi-line)
 - **Interactive:** `/dr-prd` (Claude will ask for details)
 
+**REFINE Mode:**
+- **Basic:** `/dr-prd @_claude/prd/feature.md [refinement request]`
+- **Skip confirmation:** `/dr-prd @_claude/prd/feature.md [refinement] --no-confirm`
+
 **Examples:**
+
+**Creating a new PRD:**
 ```bash
 /dr-prd We need to add real-time collaboration features to our document editor.
 Users should be able to see each other's cursors, make simultaneous edits,
 and see changes in real-time. This is for a team of 5-50 users per document.
 We're concerned about conflict resolution and performance at scale. Our backend
 is Node.js with PostgreSQL, frontend is React.
+
+# Creates: _claude/prd/realtime-collaboration-features.md
+```
+
+**Refining an existing PRD:**
+```bash
+# Add MFA requirement to authentication PRD
+/dr-prd @_claude/prd/authentication-system.md Add multi-factor authentication requirement with TOTP and SMS backup. Should support 99.9% of users enabling MFA.
+
+# Clarify performance requirements
+/dr-prd @_claude/prd/notification-system.md Clarify that "real-time" means sub-500ms delivery latency, not instant delivery.
+
+# Adjust scope based on technical constraints
+/dr-prd @_claude/prd/file-upload.md Reduce max file size from 500MB to 100MB due to API gateway limitations discovered during planning.
+
+# Quick refinement without confirmation
+/dr-prd @_claude/prd/search-feature.md Fix typo in success metrics section --no-confirm
 ```
 
 **Behavior:**
+
+**Mode Detection:**
+1. Check if `$ARGUMENTS` starts with `@`
+2. If yes → **REFINE mode** (go to Refinement Behavior below)
+3. If no → **CREATE mode** (continue with steps below)
+
+**CREATE Mode Behavior:**
 1. **Check for arguments**: If `$ARGUMENTS` is empty, ask user for detailed feature description interactively
 2. **CRITICAL: Check current date** using system environment before document creation
 3. **Use extended thinking**: Deeply analyze the feature request, think through user needs, edge cases, technical considerations, and potential challenges
@@ -533,11 +570,90 @@ is Node.js with PostgreSQL, frontend is React.
    - Risk analysis and mitigation strategies
 8. Ask clarifying questions if critical information is missing
 
+**REFINE Mode Behavior:**
+1. **Parse arguments:**
+   - Extract file reference (`@path/to/prd.md`)
+   - Extract refinement request (text after file reference, before flags)
+   - Parse flags: `--no-confirm` (skip confirmation prompt)
+
+2. **Validate PRD file:**
+   - Verify file exists in `_claude/prd/` directory
+   - Confirm file has PRD structure (has required sections)
+   - If validation fails: show error with available PRDs
+
+3. **Read and parse existing PRD:**
+   - Extract metadata (Status, Version, Created, Last Updated)
+   - Parse all sections
+   - Identify current structure and content
+
+4. **Detect status and check for warnings:**
+   - **Draft**: Proceed with refinement normally
+   - **Under Review**: Show mild warning ("stakeholders may be reviewing")
+   - **Approved**: Show strong warning + check for linked plans
+   - **Superseded**: Refuse with message ("create new version instead")
+
+5. **Check for linked plans:**
+   - Search all plan files for references to this PRD: `grep -r "@PRD_PATH" _claude/plans/`
+   - If found: List all plans that reference this PRD
+   - Include in confirmation message
+
+6. **Create automatic backup:**
+   - Copy PRD to `.{filename}.backup` in same directory
+   - Example: `auth-system.md` → `.auth-system.md.backup`
+   - Overwrite backup if exists (keep only most recent)
+
+7. **Use extended thinking to analyze:**
+   - Deeply understand the existing PRD (problem, requirements, scope)
+   - Analyze the refinement request (what changes, why, implications)
+   - Plan how to integrate changes while preserving structure
+   - Consider impact on linked plans if any
+
+8. **Generate refined PRD:**
+   - Apply requested changes thoughtfully
+   - Preserve PRD structure and format
+   - Update metadata:
+     - Increment version (1.0 → 1.1 for minor, 1.1 → 2.0 for major)
+     - Update "Last Updated" to current date
+     - Keep "Created" date unchanged
+     - Maintain or update Status if appropriate
+   - Add entry to "Refinement History" section:
+     - Current date
+     - Brief description of what was refined
+   - Maintain all other metadata
+
+9. **Generate diff summary:**
+   - Identify additions (new sections, requirements, content)
+   - Identify modifications (changed sections, updated content)
+   - Identify deletions (removed content, if any)
+   - Show what's preserved
+   - Provide clear, terminal-friendly summary
+
+10. **Request confirmation (unless --no-confirm):**
+    - Display diff summary
+    - If linked plans found: Show warning about plans
+    - Show: "Apply these changes? [y/n/diff]"
+    - If user enters **y**: Proceed to step 11
+    - If user enters **n**: Cancel, no changes made
+    - If user enters **diff**: Show detailed line-by-line diff, then ask again
+    - If --no-confirm flag present: Skip to step 11
+
+11. **Apply changes:**
+    - Write refined PRD to original file (atomic operation)
+    - Preserve file permissions
+
+12. **Confirm success:**
+    - Show success message with PRD name and version change
+    - Show backup location
+    - List what changed (summary)
+    - If linked plans exist: Remind user to review them
+    - Suggest next steps
+
 **PRD Template Structure:**
 ```markdown
 # PRD: [Feature Name]
 
 **Status:** Draft
+**Version:** 1.0
 **Created:** [Current date from system - YYYY-MM-DD format]
 **Author:** [Name or "Claude Code"]
 **Last Updated:** [Current date from system - YYYY-MM-DD format]
@@ -618,17 +734,37 @@ So that [benefit]
 - [Research documents]
 - [Related PRDs]
 - [External resources]
+
+---
+
+## Refinement History
+
+(This section is populated by `/dr-prd` refinement mode)
+
+**Version 1.0** - [Date]
+- Initial PRD creation
 ```
 
 **Command Structure in Markdown:**
 The command file should instruct Claude to:
-- Check if `$ARGUMENTS` is provided
-- If not, ask for detailed feature description
-- Use extended thinking to analyze requirements
-- Create comprehensive PRD with all sections thoughtfully filled in
-- Ask clarifying questions only if critical gaps exist
+- Detect mode (CREATE vs REFINE) based on `@` in arguments
+- **CREATE mode:**
+  - Check if `$ARGUMENTS` is provided
+  - If not, ask for detailed feature description
+  - Use extended thinking to analyze requirements
+  - Create comprehensive PRD with all sections thoughtfully filled in
+  - Ask clarifying questions only if critical gaps exist
+- **REFINE mode:**
+  - Parse file reference and refinement request
+  - Validate PRD file exists
+  - Check status and linked plans
+  - Use extended thinking to analyze existing PRD and requested changes
+  - Create backup
+  - Generate diff summary
+  - Request confirmation (unless --no-confirm)
+  - Apply changes and update metadata
 
-**User Feedback:**
+**User Feedback (CREATE mode):**
 ```
 ✅ PRD created: _claude/prd/[feature-slug].md
 
@@ -646,31 +782,138 @@ Key Considerations Identified:
 Next steps:
   1. Review and refine the PRD
   2. Discuss with stakeholders
-  3. Create implementation plan: /dr-plan [implementation context]
+  3. Refine if needed: /dr-prd @_claude/prd/[feature-slug].md [changes]
+  4. Create implementation plan: /dr-plan [implementation context]
+```
+
+**User Feedback (REFINE mode - Success):**
+```
+✅ PRD refined successfully
+
+PRD: Authentication System (v1.0 → v1.1)
+Location: _claude/prd/authentication-system.md
+Status: Draft
+
+Changes applied:
+  + Added: Multi-Factor Authentication requirement section
+    - TOTP support (authenticator apps)
+    - SMS backup codes
+    - Recovery codes for account access
+  + Added: Success metric - 95% MFA adoption within 6 months
+  ~ Modified: Security Requirements - added MFA mention
+  ~ Modified: Timeline - extended by 2 weeks for MFA implementation
+
+Backup saved: _claude/prd/.authentication-system.md.backup
+
+Next steps:
+  1. Review the refined PRD
+  2. Update status if stakeholder re-approval needed
+  3. Refine again if needed: /dr-prd @_claude/prd/authentication-system.md [more changes]
+  4. Create or update implementation plans
+```
+
+**User Feedback (REFINE mode - With Linked Plans Warning):**
+```
+✅ PRD refined successfully
+
+PRD: Authentication System (v2.0 → v2.1)
+Location: _claude/prd/authentication-system.md
+Status: Approved (⚠️ May need stakeholder re-approval)
+
+Changes applied:
+  + Added: OAuth provider support (Google, GitHub, Microsoft)
+  ~ Modified: Timeline - adjusted for OAuth integration
+  ~ Modified: Technical Considerations - OAuth token management
+
+Backup saved: _claude/prd/.authentication-system.md.backup
+
+⚠️  This PRD is referenced by 2 plans:
+  - _claude/plans/draft/001-implement-auth-core.md
+  - _claude/plans/in_progress/003-oauth-integration.md
+
+Recommended actions:
+  1. Review PRD changes and update status if needed
+  2. Review each linked plan for alignment with updated requirements
+  3. Consider refining plans that may be affected:
+     /dr-plan @_claude/plans/draft/001-implement-auth-core.md Align with PRD v2.1 OAuth requirements
+```
+
+**User Feedback (REFINE mode - Approved PRD Warning):**
+```
+⚠️  WARNING: This PRD is Approved
+
+PRD: Authentication System
+Current Version: 2.0
+Status: Approved
+
+Your requested change: "Add biometric authentication support"
+
+This PRD has been approved by stakeholders. Changes may require:
+  - Stakeholder re-approval
+  - Updates to linked implementation plans (2 plans found)
+
+Referenced by plans:
+  - 001-implement-auth-core.md (draft)
+  - 003-oauth-integration.md (in progress)
+
+Consider:
+  1. Moving status back to "Under Review" for significant changes
+  2. Creating a new major version (v3.0) for major scope changes
+  3. Continuing with minor refinements only
+
+Continue with changes to Approved PRD? [y/n]:
+```
+
+**User Feedback (REFINE mode - Superseded PRD Refusal):**
+```
+❌ Cannot refine Superseded PRD
+
+PRD: Authentication System (v1.0)
+Status: Superseded
+Superseded by: authentication-system-v2.md (v2.0)
+
+This is a historical version and should not be modified.
+
+Instead:
+  1. Refine the current version: /dr-prd @_claude/prd/authentication-system-v2.md [changes]
+  2. Create a new major version if needed: /dr-prd [new requirements based on v2]
 ```
 
 ### 4. Slash Command: `/dr-plan`
 
-**Purpose:** Create comprehensive implementation plan with deep analysis of phases, tasks, and dependencies
+**Purpose:** Create comprehensive implementation plan OR refine existing plan with deep analysis
 
 **Location:** `commands/dr-plan.md`
 
 **Frontmatter:**
 ```yaml
 ---
-description: Create a detailed implementation plan with extended thinking
-argument-hint: [detailed implementation context and requirements - can be multi-line]
-allowed-tools: Read, Write, Grep, Bash(ls:*), Bash(find:*)
+description: Create or refine a detailed implementation plan with extended thinking
+argument-hint: [implementation context OR @plan-file [refinement request]] [--no-confirm|--in-progress]
+allowed-tools: Read, Write, Edit, Grep, Bash(ls:*), Bash(find:*), Bash(cp:*)
 ---
 ```
 
+**Dual-Mode Operation:**
+This command operates in two modes based on the arguments:
+1. **CREATE mode**: When no `@plan-file` reference is provided, creates a new plan
+2. **REFINE mode**: When `@path/to/plan.md` is provided, refines existing plan
+
 **Usage:**
+
+**CREATE Mode:**
 - **With prompt:** `/dr-plan [full implementation context]` (supports multi-line)
 - **With PRD reference:** `/dr-plan [context] @_claude/prd/feature.md` (links to PRD document)
 - **With flag:** `/dr-plan [context] --in-progress` (creates in in_progress/ instead of draft/)
 - **Interactive:** `/dr-plan` (Claude will ask for details)
 
+**REFINE Mode:**
+- **Basic:** `/dr-plan @plan-file [refinement request]`
+- **Skip confirmation:** `/dr-plan @plan-file [refinement request] --no-confirm`
+
 **Examples:**
+
+**Creating a new plan:**
 ```bash
 # Basic plan without PRD
 /dr-plan Implement user authentication system with email/password and OAuth.
@@ -691,7 +934,29 @@ Backend is Express.js with PostgreSQL.
 # (with "Related PRD: _claude/prd/user-authentication-system.md" in metadata)
 ```
 
+**Refining an existing plan:**
+```bash
+# Add OAuth support to existing auth plan
+/dr-plan @_claude/plans/draft/001-authentication-system.md Add OAuth 2.0 support with Google and GitHub providers. Include token refresh logic and profile data fetching.
+
+# Add more detail to specific phase
+/dr-plan @_claude/plans/draft/001-auth.md Add detailed code examples for password hashing with Argon2 and security best practices checklist to Phase 3
+
+# Minor adjustment to in-progress plan
+/dr-plan @_claude/plans/in_progress/003-database-migration.md Add Redis 7.x requirement to Dependencies section for session storage
+
+# Skip confirmation for quick updates
+/dr-plan @_claude/plans/draft/002-api.md Fix typo in Phase 2 task description --no-confirm
+```
+
 **Behavior:**
+
+**Mode Detection:**
+1. Check if `$ARGUMENTS` contains `@_claude/plans/` (plan file reference)
+2. If yes → **REFINE mode** (go to Refinement Behavior below)
+3. If no → **CREATE mode** (continue with steps below)
+
+**CREATE Mode Behavior:**
 1. **Check for arguments**: If `$ARGUMENTS` is empty, ask user for detailed implementation context interactively
 2. **Parse for file references**: Check for `@path/to/prd.md` syntax in arguments
    - If PRD reference found, extract the file path
@@ -731,6 +996,88 @@ Backend is Express.js with PostgreSQL.
     - Dependencies identified
     - Comprehensive rollback plan
 
+**REFINE Mode Behavior:**
+1. **Parse arguments:**
+   - Extract file reference (`@path/to/plan.md`)
+   - Extract refinement request (text after file reference, before flags)
+   - Parse flags: `--no-confirm` (skip confirmation prompt)
+
+2. **Validate plan file:**
+   - Verify file exists and is accessible
+   - Confirm file is in a plan folder (draft/, in_progress/, or completed/)
+   - Verify file matches plan naming pattern (XXX-*.md)
+   - If validation fails: show helpful error with available plans
+
+3. **Detect plan status:**
+   - Determine which folder: draft/, in_progress/, or completed/
+   - If **completed/**: Refuse with message "Completed plans are historical records and should not be modified. Create a new plan incorporating lessons learned instead."
+   - If **in_progress/** and major changes requested: Warn user and suggest moving to draft first
+   - If **draft/**: Proceed with all requested changes
+
+4. **Read and analyze existing plan** using extended thinking:
+   - Parse plan structure (metadata, sections, phases)
+   - Understand current approach and reasoning
+   - Identify what works well and should be preserved
+   - Note any gaps or weaknesses
+   - Consider plan context (PRD references, dependencies, etc.)
+
+5. **Analyze refinement request** using extended thinking:
+   - What specific changes are being requested?
+   - Is this targeted improvement or major restructuring?
+   - What sections need to change vs. remain unchanged?
+   - What are the implications of this refinement?
+   - For in_progress plans: Is this a minor clarification or major change?
+
+6. **Create automatic backup:**
+   - Before any changes, copy plan to `.{filename}.backup`
+   - Example: `001-auth.md` → `.001-auth.md.backup`
+   - Backup stays in same directory
+   - Only keep most recent backup (overwrite if exists)
+
+7. **Generate refined plan:**
+   - Apply requested changes thoughtfully
+   - Preserve plan number, slug, and filename
+   - Maintain plan structure and format
+   - Update metadata:
+     - Increment refinement count or set to "1" if first refinement
+     - Keep creation date unchanged
+     - Status remains the same
+   - Add entry to Refinement History section:
+     - Current date
+     - Brief description of what was refined
+   - Preserve Related PRD reference if present
+   - Maintain all formatting conventions
+
+8. **Generate diff summary:**
+   - Compare original vs. refined plan
+   - Categorize changes:
+     - **ADDITIONS:** New phases, tasks, sections, content
+     - **MODIFICATIONS:** Changed content in existing sections
+     - **DELETIONS:** Removed content (if any)
+     - **PRESERVED:** What remains unchanged
+   - Provide clear, readable summary suitable for terminal display
+   - Estimate scope: minor changes vs. major restructuring
+
+9. **Confirmation (unless --no-confirm):**
+   - Display diff summary
+   - Show: "Apply these changes? [y/n/diff]"
+   - If user enters **y**: Proceed to step 10
+   - If user enters **n**: Cancel, no changes made
+   - If user enters **diff**: Show detailed line-by-line diff, then ask again
+   - If --no-confirm flag present: Skip this step entirely
+
+10. **Apply changes:**
+    - Write refined plan to original file
+    - Atomic operation (write to temp, then move)
+    - Preserve file permissions
+
+11. **Confirm success:**
+    - Show success message with:
+      - Plan number and name
+      - What was changed (summary)
+      - Backup location
+      - Next steps suggestion
+
 **Plan Template Structure:**
 (Based on analyzed format from par-v2-migration)
 
@@ -740,6 +1087,7 @@ Backend is Express.js with PostgreSQL.
 **Created:** [YYYY-MM-DD]
 **Status:** [Draft/In Progress/Completed]
 **Related PRD:** [Path to PRD if referenced, otherwise "N/A"]
+**Refinements:** [Number of times refined, or "None"]
 
 ## Executive Summary
 
@@ -822,6 +1170,16 @@ Backend is Express.js with PostgreSQL.
 
 ---
 
+## Refinement History
+
+(Optional section - populated by `/dr-plan` refine mode)
+
+**Refinements:**
+- [YYYY-MM-DD]: [Brief description of what was refined]
+- [YYYY-MM-DD]: [Brief description of what was refined]
+
+---
+
 ## Implementation Notes
 
 **Actual Time Tracking:**
@@ -837,18 +1195,32 @@ Backend is Express.js with PostgreSQL.
 
 **Command Structure in Markdown:**
 The command file should instruct Claude to:
-- Check if `$ARGUMENTS` is provided
-- If not, ask for detailed implementation context
-- Parse for `@path/to/prd.md` file references
-- If PRD referenced, read and analyze it to inform plan creation
-- Parse for `--in-progress` flag
-- Use extended thinking to break down the implementation
-- Optionally examine current codebase to understand state
-- Create comprehensive plan with all phases and tasks detailed
-- Include PRD reference path in metadata if provided
-- Provide realistic time estimates
+- Detect mode (CREATE vs REFINE) based on `@_claude/plans/` in arguments
+- **CREATE mode:**
+  - Check if `$ARGUMENTS` is provided
+  - If not, ask for detailed implementation context
+  - Parse for `@path/to/prd.md` file references
+  - If PRD referenced, read and analyze it to inform plan creation
+  - Parse for `--in-progress` flag
+  - Use extended thinking to break down the implementation
+  - Optionally examine current codebase to understand state
+  - Create comprehensive plan with all phases and tasks detailed
+  - Include PRD reference path in metadata if provided
+  - Provide realistic time estimates
+- **REFINE mode:**
+  - Parse file reference and refinement request
+  - Validate plan file exists and is in correct location
+  - Detect plan status and apply appropriate behavior
+  - Use extended thinking to analyze existing plan deeply
+  - Use extended thinking to understand refinement request
+  - Create automatic backup before any changes
+  - Generate refined plan with intelligent changes
+  - Produce clear diff summary
+  - Request confirmation (unless --no-confirm)
+  - Apply changes atomically
+  - Update refinement metadata and history
 
-**User Feedback:**
+**User Feedback (CREATE mode):**
 ```
 ✅ Implementation plan created: _claude/plans/[folder]/[number]-[plan-slug].md
 
@@ -873,11 +1245,83 @@ Key Insights:
 Next steps:
   1. Review the detailed implementation plan
   [If PRD referenced: 2. Verify alignment with PRD requirements]
-  2. Refine estimates and phases if needed
+  2. Refine if needed: /dr-plan @_claude/plans/draft/[number]-[plan-slug].md [changes]
   3. When ready to implement: /dr-move-plan [plan-name] in-progress
   4. IMPORTANT: Only work on plans in 'in_progress' folder!
 
 Note: Plan created in draft/ - move to in_progress/ before implementing.
+```
+
+**User Feedback (REFINE mode - Success with draft plan):**
+```
+✅ Plan refined successfully
+
+Plan #001: Authentication System
+Location: _claude/plans/draft/001-authentication-system.md
+Status: Draft (ready for review)
+
+Changes applied:
+  + Added Phase 2.5: OAuth Integration (4 hours)
+  + Added dependency: OAuth provider registration
+  ~ Modified Phase 4: Testing - Added OAuth test cases
+
+Backup saved: _claude/plans/draft/.001-authentication-system.md.backup
+
+Refinement count: 2 (see Refinement History in plan)
+
+Next steps:
+  1. Review the refined plan
+  2. Refine again if needed: /dr-plan @_claude/plans/draft/001-authentication-system.md [changes]
+  3. When ready: /dr-move-plan 001 in-progress
+```
+
+**User Feedback (REFINE mode - Warning for in-progress plan with major changes):**
+```
+⚠️  WARNING: This plan is in progress (may have completed tasks).
+
+Current status: in_progress
+Your request: "Completely redesign to use OAuth-first with optional email/password"
+
+This appears to be a major structural change that could invalidate completed work.
+
+Recommendations:
+  1. Move plan back to draft for major redesign: /dr-move-plan 003 draft
+  2. Create a new plan for the OAuth-first approach: /dr-plan [new approach]
+  3. Continue with minor adjustments only
+
+Proceed with major changes to in-progress plan? [y/n]:
+```
+
+**User Feedback (REFINE mode - Refusal for completed plan):**
+```
+❌ Cannot refine completed plan
+
+Plan #015: Authentication System
+Status: Completed (historical record)
+
+Completed plans are archived for historical reference and should not be modified.
+
+Instead:
+  1. Create a new plan incorporating lessons learned
+  2. Reference the completed plan: /dr-plan [new context] "Building on plan 015..."
+  3. Document what would be done differently in the new plan
+```
+
+**User Feedback (REFINE mode - Error: file not found):**
+```
+❌ Plan file not found: _claude/plans/draft/999-nonexistent.md
+
+Available plans:
+  draft/:
+    - 001-authentication-system.md
+    - 024-new-feature.md
+  in_progress/:
+    - 003-database-migration.md
+  completed/:
+    - 015-oauth-integration.md
+
+Usage: /dr-plan @_claude/plans/draft/001-authentication-system.md [refinement request]
+Tip: Use tab completion for file paths
 ```
 
 ### 5. Slash Command: `/dr-move-plan`
@@ -1067,10 +1511,15 @@ Structured research output with multiple markdown files per topic.
 ### Plan Status Workflow
 
 1. **Create Plan**: `/dr-plan [detailed context]` creates numbered plan in `draft/` (e.g., `001-plan-name.md`)
-2. **Review and Refine**: Edit plan with all necessary details
-3. **Move to Active**: `/dr-move-plan [plan-number-or-name] in-progress` when ready to implement
-4. **Implement**: Work through plan phases systematically
-5. **Complete**: `/dr-move-plan [plan-number-or-name] completed` when finished
+2. **Review**: Examine the plan to identify any improvements or missing details
+3. **Refine** (optional but recommended): `/dr-plan @_claude/plans/draft/001-plan.md [refinement request]` to enhance with extended thinking
+   - Can be repeated multiple times
+   - Automatically creates backup before changes
+   - Shows diff summary before applying
+4. **Move to Active**: `/dr-move-plan [plan-number-or-name] in-progress` when ready to implement
+5. **Implement**: Work through plan phases systematically
+6. **Minor Adjustments** (as needed): `/dr-plan @_claude/plans/in_progress/001-plan.md [minor changes]` for small corrections
+7. **Complete**: `/dr-move-plan [plan-number-or-name] completed` when finished
 
 **Plan Numbering:**
 Plans are automatically numbered sequentially (001, 002, 003, ..., 999, 1000, ...) to track chronological order. The number is determined by scanning **all three folders** (draft/, in_progress/, completed/) to find the highest existing number, then incrementing by 1. The number stays with the plan when moved between folders.
@@ -1083,9 +1532,12 @@ This project uses the **project-management** plugin (dr- prefix) which provides:
 
 - `/dr-init` - Initialize or update project structure
 - `/dr-research [detailed prompt]` - Conduct deep research with extended thinking (supports multi-line prompts)
-- `/dr-prd [detailed feature description]` - Create comprehensive PRD with extended thinking (supports multi-line prompts)
-- `/dr-plan [detailed context]` - Create numbered implementation plan with extended thinking (supports multi-line prompts)
+- `/dr-prd [detailed feature description OR @prd-file [refinement]]` - Create or refine comprehensive PRD with extended thinking
+- `/dr-plan [detailed context OR @plan-file [refinement]]` - Create or refine implementation plan with extended thinking (dual-mode)
 - `/dr-move-plan [plan-number-or-name] [stage]` - Move plan between stages (preserves number)
+
+**Dual-Mode Refinement:**
+Both PRDs and plans can be refined using the same commands. Use `/dr-prd @_claude/prd/feature.md [changes]` to refine PRDs or `/dr-plan @_claude/plans/draft/plan.md [changes]` to refine plans. Both commands use extended thinking, create automatic backups, and show diff summaries. They automatically detect whether you're creating or refining based on the `@` file reference.
 
 **IMPORTANT - Date Handling:**
 When creating any document with dates or timestamps, ALWAYS check the system environment for the current date/time. NEVER use hardcoded or assumed dates.
@@ -1320,45 +1772,84 @@ This ensures proper tracking and prevents premature task completion marking.
 
 ### Phase 8: Slash Command - /dr-prd
 
-**Estimated Time:** 3 hours
+**Estimated Time:** 6 hours (includes refinement functionality)
 
 #### Tasks
 - [ ] Create commands/dr-prd.md
-- [ ] Add frontmatter with description and multi-line argument support
-- [ ] Write command that instructs Claude to:
-  - [ ] Check if `$ARGUMENTS` is provided, if not ask interactively
-  - [ ] **FIRST: Check system date/time** (critical requirement)
-  - [ ] Use extended thinking to analyze feature requirements
-  - [ ] Think through user needs, edge cases, technical challenges
-  - [ ] Extract feature name and create slug
-  - [ ] Read PRD template
-  - [ ] Create PRD file with ALL sections thoughtfully populated using ACTUAL current date
-  - [ ] Ask clarifying questions only if critical gaps exist
-  - [ ] Provide summary of key considerations identified
-- [ ] Test with detailed multi-line feature description
-- [ ] Test interactive mode (no arguments)
+- [ ] Add frontmatter with description, argument support, and tools for refinement (Grep, Edit, Bash)
+- [ ] Write command that implements dual-mode operation:
+  - [ ] **Mode detection**: Check if `$ARGUMENTS` starts with `@` (refine mode) or not (create mode)
+  - [ ] **CREATE mode:**
+    - [ ] Check if `$ARGUMENTS` is provided, if not ask interactively
+    - [ ] **FIRST: Check system date/time** (critical requirement)
+    - [ ] Use extended thinking to analyze feature requirements
+    - [ ] Think through user needs, edge cases, technical challenges
+    - [ ] Extract feature name and create slug
+    - [ ] Read PRD template
+    - [ ] Create PRD file with ALL sections thoughtfully populated using ACTUAL current date
+    - [ ] Include Version 1.0 and Refinement History section
+    - [ ] Ask clarifying questions only if critical gaps exist
+    - [ ] Provide summary of key considerations identified
+  - [ ] **REFINE mode:**
+    - [ ] Parse file reference and refinement request
+    - [ ] Parse `--no-confirm` flag
+    - [ ] Validate PRD file exists in `_claude/prd/`
+    - [ ] Read and parse existing PRD (metadata, sections)
+    - [ ] Check status (Draft/Approved/Superseded) and warn appropriately
+    - [ ] Search for linked plans using grep
+    - [ ] Create automatic backup (`.{filename}.backup`)
+    - [ ] Use extended thinking to analyze existing PRD and requested changes
+    - [ ] Generate refined PRD with updated metadata (version, date, history)
+    - [ ] Generate diff summary
+    - [ ] Request confirmation (unless --no-confirm)
+    - [ ] Apply changes atomically
+    - [ ] Confirm success with backup location and next steps
+- [ ] Test CREATE mode with detailed multi-line feature description
+- [ ] Test CREATE mode interactive (no arguments)
+- [ ] Test REFINE mode with Draft PRD
+- [ ] Test REFINE mode with Approved PRD (should warn)
+- [ ] Test REFINE mode with Superseded PRD (should refuse)
+- [ ] Test REFINE mode with linked plans (should detect and warn)
+- [ ] Test --no-confirm flag
+- [ ] Test backup creation and restoration
 
 #### Deliverables
-- [ ] commands/dr-prd.md
+- [ ] commands/dr-prd.md (with dual-mode implementation)
 
 #### Success Criteria
-- [ ] Accepts multi-line prompts via `$ARGUMENTS`
-- [ ] Falls back to interactive mode if no arguments
-- [ ] Uses extended thinking for requirements analysis
-- [ ] Creates PRD with ALL sections meaningfully filled in (not just placeholders)
-- [ ] Filename follows naming convention with correct date
-- [ ] Identifies key considerations and risks
-- [ ] PRD is comprehensive and ready for stakeholder review with minimal editing
+- [ ] **CREATE mode:**
+  - [ ] Accepts multi-line prompts via `$ARGUMENTS`
+  - [ ] Falls back to interactive mode if no arguments
+  - [ ] Uses extended thinking for requirements analysis
+  - [ ] Creates PRD with ALL sections meaningfully filled in
+  - [ ] Includes Version and Refinement History sections
+  - [ ] Filename follows naming convention with correct date
+  - [ ] Identifies key considerations and risks
+- [ ] **REFINE mode:**
+  - [ ] Detects `@file` reference and switches to refine mode
+  - [ ] Validates PRD file and shows helpful errors
+  - [ ] Uses extended thinking for refinement analysis
+  - [ ] Creates automatic backups
+  - [ ] Detects and warns about linked plans
+  - [ ] Respects PRD status (Draft/Approved/Superseded)
+  - [ ] Shows clear diff summary
+  - [ ] Requires confirmation (unless --no-confirm)
+  - [ ] Updates version and refinement history
+  - [ ] Provides clear success feedback
+- [ ] Both modes work seamlessly from same command
 
 ### Phase 9: Slash Command - /dr-plan
 
-**Estimated Time:** 4 hours
+**Estimated Time:** 8 hours (includes dual-mode create + refine functionality)
 
 #### Tasks
 - [ ] Create commands/dr-plan.md
-- [ ] Add frontmatter with description and multi-line argument support
+- [ ] Add frontmatter with description, multi-line argument support, and dual-mode tools (Edit, Bash(cp:*))
 - [ ] Support PRD references via `@path/to/prd.md` syntax
-- [ ] Write command that instructs Claude to:
+- [ ] Write command that implements dual-mode operation:
+  - [ ] **Mode detection**: Check if `$ARGUMENTS` contains `@_claude/plans/` (plan file reference)
+  - [ ] If yes → REFINE mode, if no → CREATE mode
+  - [ ] **CREATE mode:**
   - [ ] Check if `$ARGUMENTS` is provided, if not ask interactively
   - [ ] **Parse for PRD file references** (`@path/to/prd.md` syntax)
   - [ ] If PRD referenced, verify file exists and read its contents
@@ -1383,7 +1874,23 @@ This ensures proper tracking and prevents premature task completion marking.
   - [ ] Create plan file with numbered format: `[number]-[slug].md` with ALL sections thoughtfully populated using ACTUAL current date
   - [ ] If PRD referenced, include path in plan metadata
   - [ ] Provide summary of key insights and considerations including plan number
-- [ ] Test with detailed multi-line implementation context
+  - [ ] **REFINE mode:**
+    - [ ] Parse file reference (`@path/to/plan.md`)
+    - [ ] Parse refinement request (text after file reference, before flags)
+    - [ ] Parse `--no-confirm` flag
+    - [ ] Validate plan file exists and is in a plan folder
+    - [ ] Detect plan status (draft/in_progress/completed)
+    - [ ] If completed: Refuse with message (historical records)
+    - [ ] If in_progress + major changes: Warn user, suggest moving to draft
+    - [ ] Read and analyze existing plan using extended thinking
+    - [ ] Analyze refinement request using extended thinking
+    - [ ] Create automatic backup (`.{filename}.backup`)
+    - [ ] Generate refined plan (preserve number, update metadata, add refinement history)
+    - [ ] Generate diff summary (additions, modifications, deletions, preserved)
+    - [ ] Unless --no-confirm: Ask for confirmation (y/n/diff)
+    - [ ] Apply changes atomically
+    - [ ] Confirm success with backup location
+- [ ] Test CREATE mode with detailed multi-line implementation context
 - [ ] **Test with PRD reference** (e.g., `/dr-plan [context] @_claude/prd/feature.md`)
 - [ ] Test PRD file validation (nonexistent file, invalid path)
 - [ ] Test with --in-progress flag
@@ -1393,11 +1900,20 @@ This ensures proper tracking and prevents premature task completion marking.
 - [ ] Test numbering edge case: all plans in completed/, new plan gets correct next number
 - [ ] Test numbering edge case: plans spread across all three folders, finds highest correctly
 - [ ] Test numbering: verify scans ALL three folders (not just draft/)
+- [ ] Test REFINE mode with draft plan
+- [ ] Test REFINE mode with in_progress plan + minor changes
+- [ ] Test REFINE mode with in_progress plan + major changes (should warn)
+- [ ] Test REFINE mode with completed plan (should refuse)
+- [ ] Test --no-confirm flag in refine mode
+- [ ] Test backup creation and restoration
+- [ ] Test diff summary accuracy
+- [ ] Test confirmation flow (y/n/diff options)
 
 #### Deliverables
-- [ ] commands/dr-plan.md
+- [ ] commands/dr-plan.md (with dual-mode implementation)
 
 #### Success Criteria
+**CREATE mode:**
 - [ ] Accepts multi-line prompts via `$ARGUMENTS`
 - [ ] **Supports PRD references** via `@path/to/prd.md` syntax
 - [ ] Reads and analyzes PRD content when referenced
@@ -1419,6 +1935,91 @@ This ensures proper tracking and prevents premature task completion marking.
 - [ ] Can optionally read codebase for current state analysis
 - [ ] Clear warnings about draft vs in-progress status
 - [ ] User feedback includes plan number
+
+**REFINE mode:**
+- [ ] Detects plan file reference and switches to refine mode
+- [ ] Validates plan file exists and is in correct location
+- [ ] Uses extended thinking for refinement analysis
+- [ ] Creates automatic backups
+- [ ] Respects plan status (Draft/In-Progress/Completed)
+- [ ] Draft plans: all changes allowed
+- [ ] In-progress plans: warns about major changes
+- [ ] Completed plans: refuses to modify
+- [ ] Shows clear diff summary
+- [ ] Requires confirmation (unless --no-confirm)
+- [ ] Preserves plan number and slug
+- [ ] Updates refinement history
+- [ ] Provides clear success feedback
+
+**Both modes:**
+- [ ] Work seamlessly from same command
+- [ ] Automatic mode detection via `@_claude/plans/` reference
+
+### Phase 10: Slash Command - /dr-move-plan
+
+**Estimated Time:** 4 hours
+
+#### Tasks
+- [ ] Create commands/dr-refine-plan.md
+- [ ] Add frontmatter with description and argument support
+- [ ] Write command that instructs Claude to:
+  - [ ] Parse arguments for file reference (`@path/to/plan.md`)
+  - [ ] Parse refinement request (text after file reference, before flags)
+  - [ ] Parse flags: `--no-confirm` (skip confirmation)
+  - [ ] **Validate plan file exists** and is in a plan folder
+  - [ ] **Detect plan status** (draft, in_progress, or completed)
+  - [ ] **Read and analyze existing plan** using extended thinking
+  - [ ] **Analyze refinement request** using extended thinking
+  - [ ] **If plan is completed**: Refuse with message (historical records shouldn't change)
+  - [ ] **If plan is in_progress** and major changes requested: Warn user, suggest moving to draft
+  - [ ] **Create automatic backup**: `.{filename}.backup` before any changes
+  - [ ] **Generate refined plan**:
+    - Preserve plan number, slug, and core metadata
+    - Apply requested changes intelligently
+    - Maintain plan structure and format
+    - Update "Last Refined" timestamp
+    - Add refinement note to metadata
+  - [ ] **Generate diff summary**:
+    - List additions (new phases, tasks, sections)
+    - List modifications (changed content)
+    - List deletions (if any)
+    - Show what's preserved
+  - [ ] **Unless --no-confirm**: Ask for confirmation
+    - Options: y (yes), n (no), diff (show detailed diff first)
+    - If diff: show line-by-line changes, then ask again
+  - [ ] **Apply changes**: Write refined plan to original file
+  - [ ] **Confirm success**: Show what was changed and where backup is
+- [ ] Test basic refinement (add content to plan)
+- [ ] Test backup creation and restoration
+- [ ] Test confirmation flow (y/n/diff options)
+- [ ] Test --no-confirm flag
+- [ ] Test with draft plan (should work smoothly)
+- [ ] Test with in_progress plan + minor changes (should work)
+- [ ] Test with in_progress plan + major changes (should warn)
+- [ ] Test with completed plan (should refuse)
+- [ ] Test diff summary accuracy
+- [ ] Test file reference with autocomplete
+- [ ] Test error handling (file not found, not a plan file, invalid path)
+
+#### Deliverables
+- [ ] commands/dr-refine-plan.md
+
+#### Success Criteria
+- [ ] Accepts file reference via `@path/to/plan.md` syntax
+- [ ] Uses extended thinking to analyze existing plan and refinement request
+- [ ] Creates automatic backup before any changes
+- [ ] Generates clear, readable diff summary
+- [ ] Requires confirmation before applying changes (unless --no-confirm)
+- [ ] Preserves plan number and slug
+- [ ] Status-aware: different behavior for draft/in_progress/completed
+- [ ] Draft plans: allows all changes
+- [ ] In-progress plans: warns about major changes
+- [ ] Completed plans: refuses to modify
+- [ ] Applies changes intelligently while preserving plan structure
+- [ ] Clear user feedback showing what changed
+- [ ] Handles errors gracefully with helpful messages
+- [ ] Works with autocomplete for file paths
+- [ ] Maintains plan quality equivalent to original creation
 
 ### Phase 10: Slash Command - /dr-move-plan
 
@@ -1529,7 +2130,7 @@ This ensures proper tracking and prevents premature task completion marking.
 ## Success Metrics
 
 ### Plugin Completeness
-- [ ] All 5 slash commands implemented and working
+- [ ] All 5 slash commands implemented and working (dual-mode for PRD and plan)
 - [ ] All 5 templates created and tested
 - [ ] Plugin installs without errors
 - [ ] Documentation is comprehensive
@@ -1537,9 +2138,24 @@ This ensures proper tracking and prevents premature task completion marking.
 ### Functionality
 - [ ] `/dr-init` creates directory structure and CLAUDE.md
 - [ ] `/dr-research` conducts research and creates multi-file documentation
-- [ ] `/dr-prd` creates PRD from template
-- [ ] `/dr-plan` creates implementation plan in correct folder
+- [ ] `/dr-prd` creates PRD from template OR refines existing PRD (dual-mode)
+- [ ] `/dr-plan` creates implementation plan OR refines existing plan (dual-mode)
 - [ ] `/dr-move-plan` moves plans between stages
+
+### Refinement Capabilities (Dual-Mode)
+- [ ] `/dr-prd` detects existing files and switches to refine mode
+- [ ] PRD refinement uses extended thinking for analysis
+- [ ] PRD refinement creates automatic backups
+- [ ] PRD refinement shows diff summary before applying changes
+- [ ] PRD refinement checks for linked plans and warns user
+- [ ] PRD refinement respects status (Draft/Approved/Superseded)
+- [ ] `/dr-plan` detects existing plan files and switches to refine mode
+- [ ] Plan refinement uses extended thinking for analysis
+- [ ] Plan refinement creates automatic backups
+- [ ] Plan refinement shows diff summary before applying changes
+- [ ] Plan refinement maintains plan number and structure
+- [ ] Plan refinement respects status (Draft/In-Progress/Completed)
+- [ ] Both commands support --no-confirm flag in refine mode
 
 ### Usability
 - [ ] Commands have clear descriptions in `/help`
