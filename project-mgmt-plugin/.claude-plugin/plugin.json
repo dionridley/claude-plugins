@@ -1,0 +1,23 @@
+{
+  "name": "project-management",
+  "version": "1.0.0",
+  "description": "Structured project management with research, PRDs, and implementation plans",
+  "author": {
+    "name": "DR"
+  },
+  "keywords": [
+    "project-management",
+    "planning",
+    "research",
+    "prd",
+    "documentation"
+  ],
+  "license": "MIT",
+  "commands": [
+    "./commands/dr-init.md",
+    "./commands/dr-research.md",
+    "./commands/dr-prd.md",
+    "./commands/dr-plan.md",
+    "./commands/dr-move-plan.md"
+  ]
+}
