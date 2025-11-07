@@ -309,21 +309,21 @@ project-mgmt-plugin/
 
 ### 1. Slash Command: `/dr-init`
 
-**Purpose:** Initialize or update project with standard directory structure and CLAUDE.md
+**Purpose:** Initialize project with standard directory structure and CLAUDE.md (one-time setup)
 
 **Location:** `commands/dr-init.md`
 
 **Frontmatter:**
 ```yaml
 ---
-description: Initialize or update project with standard directory structure
-allowed-tools: Bash(mkdir:*), Bash(ls:*), Read, Write, Edit
+description: Initialize project with standard directory structure
+allowed-tools: Bash(mkdir:*), Bash(ls:*), Read, Write
 ---
 ```
 
 **Behavior:**
 1. Check if `_claude/` directory exists
-2. Create directory structure:
+2. Create directory structure if missing:
    ```
    _claude/
    ├── docs/           # Technical documentation
@@ -344,10 +344,13 @@ allowed-tools: Bash(mkdir:*), Bash(ls:*), Read, Write, Edit
    - `_claude/resources/.gitkeep`
    - `_claude/research/.gitkeep`
 4. Check if CLAUDE.md exists
-5. If missing: Create from template
-6. If exists: Check for plugin-managed section and update it
+5. **If missing:** Create from template (with plugin version tracking)
+6. **If exists:** Verify structure is complete, create any missing folders
+   - **NEVER modify existing CLAUDE.md** (user-owned after creation)
+   - Show friendly message that project is already initialized
 
 **CLAUDE.md Template Content:**
+- **Version tracking comment** (plugin version, generation date)
 - Welcome message
 - Directory structure explanation
 - Commands available from plugin
@@ -355,8 +358,9 @@ allowed-tools: Bash(mkdir:*), Bash(ls:*), Read, Write, Edit
 - Strict rules about not executing draft plans
 - Section for project-specific commands (placeholder)
 - Development principles (general, not language-specific)
+- **Note to users:** "This file is yours to customize. The plugin will never automatically modify it."
 
-**User Feedback:**
+**User Feedback (First Run):**
 ```
 ✅ Project structure initialized!
 
@@ -368,17 +372,45 @@ Created:
   _claude/prd/ (.gitkeep added)
   _claude/resources/ (.gitkeep added)
   _claude/research/ (.gitkeep added)
-
-Updated: CLAUDE.md
-  - Added project management structure instructions
-  - Available commands: /dr-research, /dr-prd, /dr-plan, /dr-move-plan
+  CLAUDE.md (project guidelines)
 
 Next steps:
-  1. Review CLAUDE.md and customize for your project
+  1. Review and customize CLAUDE.md for your project
   2. Add project-specific commands (build, test, lint, etc.)
   3. Commit the new structure: git add _claude/ CLAUDE.md
   4. Create your first PRD: /dr-prd [feature description]
   5. Or conduct research: /dr-research [topic]
+
+💡 Note: CLAUDE.md is yours to customize. The plugin will never automatically modify it.
+```
+
+**User Feedback (Subsequent Runs):**
+```
+✅ Project structure verified
+
+Directory structure: Already exists (✓)
+CLAUDE.md: Already exists (✓)
+
+Your project is already initialized.
+
+💡 Your CLAUDE.md is customized for your project. The plugin will never
+   automatically modify it to preserve your customizations.
+
+   To adopt new template features from plugin updates:
+   1. Review plugin release notes
+   2. Manually add desired improvements to your CLAUDE.md
+```
+
+**User Feedback (Missing Folders, CLAUDE.md Exists):**
+```
+✅ Project structure updated
+
+Created missing directories:
+  _claude/plans/in_progress/ (.gitkeep added)
+
+CLAUDE.md: Preserved (✓)
+
+Your existing CLAUDE.md has been preserved. Missing directories have been created.
 ```
 
 ### 2. Slash Command: `/dr-research`
@@ -1430,6 +1462,18 @@ Usage:
 ### Template: CLAUDE.md.template
 
 ```markdown
+<!--
+  Plugin: project-management v1.0.0
+  Template generated: [YYYY-MM-DD from system date]
+
+  This file is yours to customize for your project.
+  The plugin will never automatically modify it after creation.
+
+  To adopt new template features from future plugin versions:
+  - Review plugin release notes
+  - Manually add desired improvements to this file
+-->
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
@@ -1716,9 +1760,11 @@ This ensures proper tracking and prevents premature task completion marking.
     - [ ] _claude/prd/.gitkeep
     - [ ] _claude/resources/.gitkeep
     - [ ] _claude/research/.gitkeep
-  - [ ] Read CLAUDE.md.template from plugin
-  - [ ] Create or update CLAUDE.md (preserve existing content if present)
-  - [ ] Provide user feedback with git commit reminder
+  - [ ] Check if CLAUDE.md exists
+  - [ ] **If CLAUDE.md missing:** Read template from plugin and create CLAUDE.md (with plugin version comment)
+  - [ ] **If CLAUDE.md exists:** NEVER modify it, show friendly message that project is already initialized
+  - [ ] Verify structure is complete, create any missing folders/gitkeep files
+  - [ ] Provide appropriate user feedback based on what was created
 - [ ] Test on new project (verify .gitkeep files created)
 - [ ] Test on existing project with CLAUDE.md
 - [ ] Test in git repo: verify empty directories are tracked after git add
@@ -1730,10 +1776,13 @@ This ensures proper tracking and prevents premature task completion marking.
 - [ ] Creates directory structure correctly
 - [ ] **Creates .gitkeep files in all 7 leaf directories**
 - [ ] .gitkeep files allow empty directories to be committed to git
-- [ ] Generates CLAUDE.md from template
-- [ ] Idempotent (safe to run multiple times - doesn't duplicate .gitkeep files)
-- [ ] Preserves existing CLAUDE.md content
-- [ ] Clear user feedback mentioning git commit
+- [ ] Generates CLAUDE.md from template (first run only)
+- [ ] CLAUDE.md includes plugin version comment for tracking
+- [ ] **NEVER modifies existing CLAUDE.md** (user-owned after creation)
+- [ ] Safe to run multiple times (creates missing pieces, preserves CLAUDE.md)
+- [ ] Shows appropriate feedback for first run vs. subsequent runs
+- [ ] Clear user feedback mentioning git commit (first run)
+- [ ] Friendly "already initialized" message (subsequent runs)
 - [ ] Works in both git and non-git repositories
 
 ### Phase 7: Slash Command - /dr-research
