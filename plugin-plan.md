@@ -322,8 +322,20 @@ allowed-tools: Bash(mkdir:*), Bash(ls:*), Read, Write
 ```
 
 **Behavior:**
-1. Check if `_claude/` directory exists
-2. Create directory structure if missing:
+
+**Phase 1: Detect Project State**
+1. Check if CLAUDE.md exists
+2. If CLAUDE.md exists, check for version marker: `<!-- Plugin: project-management`
+3. Check if `_claude/` directory exists with expected structure
+4. Determine project state:
+   - **State A (Fresh)**: No CLAUDE.md, no `_claude/` folder
+   - **State B (Initialized)**: Has version marker OR has `_claude/` folder structure
+   - **State C (Uninitialized)**: Has CLAUDE.md but NO version marker AND NO `_claude/` folder
+
+**Phase 2: Handle Based on State**
+
+**STATE A - Fresh Project:**
+1. Create directory structure:
    ```
    _claude/
    ├── docs/           # Technical documentation
@@ -335,19 +347,35 @@ allowed-tools: Bash(mkdir:*), Bash(ls:*), Read, Write
    ├── resources/      # Reference materials
    └── research/       # Structured research output
    ```
-3. **Create `.gitkeep` files in all leaf directories** (ensures git commits empty folders):
-   - `_claude/docs/.gitkeep`
-   - `_claude/plans/draft/.gitkeep`
-   - `_claude/plans/in_progress/.gitkeep`
-   - `_claude/plans/completed/.gitkeep`
-   - `_claude/prd/.gitkeep`
-   - `_claude/resources/.gitkeep`
-   - `_claude/research/.gitkeep`
-4. Check if CLAUDE.md exists
-5. **If missing:** Create from template (with plugin version tracking)
-6. **If exists:** Verify structure is complete, create any missing folders
-   - **NEVER modify existing CLAUDE.md** (user-owned after creation)
-   - Show friendly message that project is already initialized
+2. **Create `.gitkeep` files in all leaf directories** (7 files total)
+3. Create CLAUDE.md from template with version marker
+4. Show success feedback
+
+**STATE B - Already Initialized:**
+1. Verify structure is complete
+2. Create any missing folders/`.gitkeep` files
+3. **NEVER modify existing CLAUDE.md**
+4. Show "already initialized" message
+
+**STATE C - Uninitialized (Has CLAUDE.md but no plugin structure):**
+1. Show detection message: "CLAUDE.md exists but not initialized with plugin"
+2. Offer user three options:
+   - **[a] Append**: Add plugin template to existing CLAUDE.md
+   - **[s] Show**: Display template content (user copies what they want)
+   - **[c] Cancel**: Do nothing
+3. Wait for user choice
+4. **If Append chosen:**
+   - Create `_claude/` folder structure and `.gitkeep` files
+   - Read existing CLAUDE.md content
+   - Add version marker to top
+   - Append plugin template sections to file
+   - Show what was added
+5. **If Show chosen:**
+   - Create `_claude/` folder structure and `.gitkeep` files
+   - Display full template content to terminal
+   - User manually adds desired content
+6. **If Cancel chosen:**
+   - Exit without changes
 
 **CLAUDE.md Template Content:**
 - **Version tracking comment** (plugin version, generation date)
@@ -411,6 +439,94 @@ Created missing directories:
 CLAUDE.md: Preserved (✓)
 
 Your existing CLAUDE.md has been preserved. Missing directories have been created.
+```
+
+**User Feedback (Uninitialized - Detection):**
+```
+⚠️  CLAUDE.md exists but project is not initialized with plugin structure
+
+Current CLAUDE.md: 45 lines
+
+This appears to be a custom or minimal CLAUDE.md file. The project-management
+plugin can help set up the recommended structure.
+
+Options:
+  [a] Append plugin template to your existing CLAUDE.md
+      - Adds plugin sections to end of your file
+      - Preserves all existing content
+      - Creates _claude/ folder structure
+
+  [s] Show plugin template (you copy/paste what you want)
+      - Displays full template content
+      - Creates _claude/ folder structure
+      - You manually add desired sections
+
+  [c] Cancel (do nothing)
+
+Choice [a/s/c]:
+```
+
+**User Feedback (Uninitialized - Append Chosen):**
+```
+✅ Plugin structure added!
+
+Created:
+  _claude/docs/ (.gitkeep added)
+  _claude/plans/draft/ (.gitkeep added)
+  _claude/plans/in_progress/ (.gitkeep added)
+  _claude/plans/completed/ (.gitkeep added)
+  _claude/prd/ (.gitkeep added)
+  _claude/resources/ (.gitkeep added)
+  _claude/research/ (.gitkeep added)
+
+Updated: CLAUDE.md
+  - Added version tracking comment at top
+  - Appended plugin template sections:
+    • Project Structure explanation
+    • Plan Management Workflow
+    • Available Commands
+    • Development principles
+
+Your existing content has been preserved at the beginning of the file.
+
+Next steps:
+  1. Review CLAUDE.md - your content is at the top, plugin sections at the bottom
+  2. Reorganize/merge sections as desired
+  3. Commit the new structure: git add _claude/ CLAUDE.md
+  4. Start using plugin commands: /dr-prd, /dr-plan, /dr-research
+```
+
+**User Feedback (Uninitialized - Show Chosen):**
+```
+✅ Folder structure created!
+
+Created:
+  _claude/docs/ (.gitkeep added)
+  _claude/plans/draft/ (.gitkeep added)
+  _claude/plans/in_progress/ (.gitkeep added)
+  _claude/plans/completed/ (.gitkeep added)
+  _claude/prd/ (.gitkeep added)
+  _claude/resources/ (.gitkeep added)
+  _claude/research/ (.gitkeep added)
+
+CLAUDE.md: Preserved (not modified)
+
+📋 Plugin template content (copy sections you want to your CLAUDE.md):
+
+---BEGIN TEMPLATE---
+
+<!--
+  Plugin: project-management v1.0.0
+  Template generated: 2025-01-06
+  ... full template content displayed here ...
+-->
+
+---END TEMPLATE---
+
+Next steps:
+  1. Review the template above
+  2. Copy sections you want to your CLAUDE.md
+  3. Commit the new structure: git add _claude/ CLAUDE.md
 ```
 
 ### 2. Slash Command: `/dr-research`
@@ -1749,25 +1865,45 @@ This ensures proper tracking and prevents premature task completion marking.
 #### Tasks
 - [ ] Create commands/dr-init.md
 - [ ] Add frontmatter with description and allowed-tools
-- [ ] Write command logic:
-  - [ ] Check for existing _claude/ directory
-  - [ ] Create directory structure if missing (docs, plans/draft, plans/in_progress, plans/completed, prd, resources, research)
-  - [ ] **Create .gitkeep files in ALL leaf directories** (7 files total):
-    - [ ] _claude/docs/.gitkeep
-    - [ ] _claude/plans/draft/.gitkeep
-    - [ ] _claude/plans/in_progress/.gitkeep
-    - [ ] _claude/plans/completed/.gitkeep
-    - [ ] _claude/prd/.gitkeep
-    - [ ] _claude/resources/.gitkeep
-    - [ ] _claude/research/.gitkeep
-  - [ ] Check if CLAUDE.md exists
-  - [ ] **If CLAUDE.md missing:** Read template from plugin and create CLAUDE.md (with plugin version comment)
-  - [ ] **If CLAUDE.md exists:** NEVER modify it, show friendly message that project is already initialized
-  - [ ] Verify structure is complete, create any missing folders/gitkeep files
-  - [ ] Provide appropriate user feedback based on what was created
-- [ ] Test on new project (verify .gitkeep files created)
-- [ ] Test on existing project with CLAUDE.md
+- [ ] Write command logic with smart state detection:
+  - [ ] **Phase 1: Detect Project State**
+    - [ ] Check if CLAUDE.md exists
+    - [ ] If exists, check for version marker `<!-- Plugin: project-management`
+    - [ ] Check if `_claude/` directory exists
+    - [ ] Determine state: Fresh / Initialized / Uninitialized
+  - [ ] **Phase 2: Handle State A (Fresh Project)**
+    - [ ] Create full directory structure (docs, plans/draft, plans/in_progress, plans/completed, prd, resources, research)
+    - [ ] **Create .gitkeep files in ALL 7 leaf directories**
+    - [ ] Create CLAUDE.md from template with version marker
+    - [ ] Show success feedback
+  - [ ] **Phase 3: Handle State B (Already Initialized)**
+    - [ ] Verify structure is complete
+    - [ ] Create any missing folders/gitkeep files
+    - [ ] NEVER modify CLAUDE.md
+    - [ ] Show "already initialized" message
+  - [ ] **Phase 4: Handle State C (Uninitialized - has CLAUDE.md but no plugin structure)**
+    - [ ] Show detection message with three options
+    - [ ] Wait for user input [a/s/c]
+    - [ ] **If [a] Append:**
+      - [ ] Create `_claude/` structure and gitkeep files
+      - [ ] Read existing CLAUDE.md content
+      - [ ] Prepend version marker to top
+      - [ ] Append plugin template sections to end
+      - [ ] Show what was added
+    - [ ] **If [s] Show:**
+      - [ ] Create `_claude/` structure and gitkeep files
+      - [ ] Display full template content to terminal
+      - [ ] Show instructions for manual copy/paste
+    - [ ] **If [c] Cancel:**
+      - [ ] Exit without changes
+- [ ] Test State A: Fresh project (no CLAUDE.md, no _claude/)
+- [ ] Test State B: Already initialized (has version marker or _claude/)
+- [ ] Test State C: Uninitialized with empty CLAUDE.md - choose [a] Append
+- [ ] Test State C: Uninitialized with content in CLAUDE.md - choose [s] Show
+- [ ] Test State C: Uninitialized - choose [c] Cancel
+- [ ] Test missing folders scenario (has CLAUDE.md with marker, missing some folders)
 - [ ] Test in git repo: verify empty directories are tracked after git add
+- [ ] Test version marker detection works correctly
 
 #### Deliverables
 - [ ] commands/dr-init.md
