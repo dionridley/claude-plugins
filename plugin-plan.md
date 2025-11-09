@@ -5,6 +5,7 @@
 This plan outlines the creation of a reusable Claude Code plugin that brings structured project management practices to any codebase. The plugin provides standardized directory structures, research workflows, PRD creation, and implementation planning with consistent templates - all language and framework agnostic.
 
 **Key Goals:**
+
 - Create reusable project structure (`_claude/` with docs, plans, prd, resources, research)
 - Provide explicit workflows for research, PRD writing, and plan creation
 - Use templates to ensure consistency across projects
@@ -18,6 +19,7 @@ This plan outlines the creation of a reusable Claude Code plugin that brings str
 
 **Plugin Components:**
 Claude Code plugins support five component types:
+
 - **Commands** (slash commands): Manual invocation, single markdown files
 - **Agents**: Specialized subagents for complex tasks
 - **Skills**: Autonomous capabilities Claude discovers and uses
@@ -25,6 +27,7 @@ Claude Code plugins support five component types:
 - **MCP Servers**: Integration with external tools
 
 **Plugin Structure:**
+
 ```
 plugin-name/
 ├── .claude-plugin/
@@ -37,11 +40,13 @@ plugin-name/
 ```
 
 **Critical Requirements:**
+
 - Component directories must be at plugin root (not nested in .claude-plugin/)
 - plugin.json requires `name` field (kebab-case)
 - Paths in manifest must be relative, starting with `./`
 
 **Distribution:**
+
 - Plugins can be distributed via marketplace catalogs
 - Teams can configure repository-level settings for automatic installation
 - Users install via `/plugin install plugin-name@marketplace-name`
@@ -49,6 +54,7 @@ plugin-name/
 ### 2. Skills vs Slash Commands Decision Framework
 
 **Slash Commands:**
+
 - **Invocation**: Manual via `/command-name`
 - **Structure**: Single markdown file
 - **Arguments**: Supports `$ARGUMENTS`, `$1`, `$2`, etc.
@@ -56,6 +62,7 @@ plugin-name/
 - **Discovery**: Listed in `/help` command
 
 **Skills:**
+
 - **Invocation**: Automatic discovery by Claude based on description
 - **Structure**: Directory with SKILL.md + supporting files
 - **Arguments**: Context-driven (no parameters)
@@ -73,12 +80,14 @@ plugin-name/
 ### 3. CLAUDE.md Priority and File References
 
 **Hierarchy (Highest to Lowest):**
+
 1. Enterprise Policy (`/etc/claude-code/CLAUDE.md` or system-wide location)
 2. Project Memory (`./CLAUDE.md` or `./.claude/CLAUDE.md`)
 3. User Memory (`~/.claude/CLAUDE.md`)
 4. Project Memory Local (`./CLAUDE.local.md` - deprecated)
 
 **Key Findings:**
+
 - Claude recursively searches from working directory upward
 - Files can reference external files via `@path/to/file` syntax
 - **Critical**: Referenced files inherit the priority of the importing file
@@ -87,6 +96,7 @@ plugin-name/
 - Check loaded files using `/memory` command
 
 **Implications:**
+
 - No benefit to separating instructions into referenced files for priority reasons
 - Separation only useful for organization or reusing same content in multiple places
 - For plugin use case, keep core instructions in CLAUDE.md template for simplicity
@@ -94,22 +104,26 @@ plugin-name/
 ### 4. Template Mechanisms Available
 
 **Slash Command Templates:**
+
 - `$ARGUMENTS`: Captures all arguments
 - `$1`, `$2`, `$3`: Positional parameters
 - `@file`: Include file contents
 - `!command`: Execute bash before expansion
 
 **File Imports:**
+
 - `@path/to/file` syntax in CLAUDE.md
 - `@~/.claude/file` for user-level files
 - Relative and absolute paths supported
 
 **Supporting Files in Skills:**
+
 - Skills can have templates/ directories
 - Files loaded only when skill is invoked
 - Supports complex multi-file templates
 
 **MCP Integration:**
+
 - `${CLAUDE_PLUGIN_ROOT}` expands to plugin directory
 - Enables portable script references
 
@@ -118,6 +132,7 @@ plugin-name/
 Based on analyzing completed plans from par-v2-migration, the consistent template structure includes:
 
 **Required Sections:**
+
 1. **Executive Summary** - 2-3 sentences: what, why, problem solved
 2. **Current State** - Objective assessment of existing state
 3. **Success Criteria** - Measurable checkboxes
@@ -127,23 +142,28 @@ Based on analyzing completed plans from par-v2-migration, the consistent templat
 7. **Success Metrics** - Final results with checkboxes
 
 **Phase Structure:**
+
 ```markdown
 ### Phase N: [Clear Phase Name] [Status Icon]
 
 **Estimated Time**: X hours (Actual: Y hours)
 
 #### Tasks
+
 - [ ] Specific, actionable task 1
 - [ ] Specific, actionable task 2
 
 #### Test Verification (if applicable)
+
 - [ ] Specific test file or suite
 
 #### Code Changes Needed (if applicable)
+
 [Actual code examples]
 ```
 
 **Formatting Conventions:**
+
 - Status icons: ✅ (completed), 🔄 (in progress), none (not started)
 - Checkboxes: `- [ ]` incomplete, `- [x]` completed
 - Time tracking: Always estimated vs actual
@@ -161,17 +181,20 @@ Based on analyzing completed plans from par-v2-migration, the consistent templat
 **Options Considered:**
 
 **Option A: Skill that autonomously maintains structure**
+
 - ❌ Too autonomous - creates directories without explicit permission
 - ❌ Users may not want structure in all projects
 - ❌ Hard to control when it activates
 
 **Option B: Separate files with @ references in CLAUDE.md**
+
 - ❌ No priority benefit (references inherit parent priority)
 - ❌ More complex to maintain
 - ✅ Slightly easier to update across projects
 - ❌ Requires manual CLAUDE.md editing to add reference
 
 **Option C: Slash command that generates/updates CLAUDE.md** ✅ SELECTED
+
 - ✅ Explicit user control over initialization
 - ✅ Can be re-run to update with plugin improvements
 - ✅ Works for both new and existing projects
@@ -179,6 +202,7 @@ Based on analyzing completed plans from par-v2-migration, the consistent templat
 - ✅ Idempotent - safe to run multiple times
 
 **Decision:** Create `/dr-init` slash command that:
+
 1. Creates directory structure if missing
 2. Generates or updates CLAUDE.md with standardized instructions
 3. Preserves existing content while adding/updating plugin sections
@@ -187,16 +211,19 @@ Based on analyzing completed plans from par-v2-migration, the consistent templat
 ### Decision 2: Skills vs Slash Commands for Core Features
 
 **Research Workflow:**
+
 - **Decision:** Slash command (`/dr-research`)
 - **Rationale:** Users explicitly decide when to conduct research, provide research topic as argument, want control over when research happens
 - **Usage:** `/dr-research [topic]` creates `_claude/research/[topic-slug]/` with structured markdown files
 
 **PRD Creation:**
+
 - **Decision:** Slash command (`/dr-prd`)
 - **Rationale:** Explicit document creation, user provides feature name, manual trigger point
 - **Usage:** `/dr-prd [feature-name]` creates `_claude/prd/[feature-name].md` from template
 
 **Plan Creation:**
+
 - **Decision:** Slash command (`/dr-plan`)
 - **Rationale:** Explicit document creation, uses consistent template, user decides when planning happens
 - **Usage:** `/dr-plan [plan-name]` creates `_claude/plans/draft/[plan-name].md` with full template structure
@@ -208,17 +235,20 @@ Based on analyzing completed plans from par-v2-migration, the consistent templat
 **Problem:** Should plugin instructions live in CLAUDE.md or separate files referenced via @?
 
 **Analysis:**
+
 - Referenced files have same priority as importing file (no hierarchy benefit)
 - Separation adds complexity without priority gain
 - For directory structure instructions, always need them loaded
 - Templates (plan format) should be separate for reusability by commands
 
 **Decision:** Hybrid approach ✅
+
 - **CLAUDE.md**: Core project structure instructions (always loaded, simple)
 - **Separate template files**: Plan templates, PRD templates (used by slash commands)
 - **No @ references**: Keep CLAUDE.md self-contained for simplicity
 
 **Benefits:**
+
 - CLAUDE.md remains the single source of truth for session instructions
 - Templates are reusable by slash commands without duplication
 - Simpler to understand and maintain
@@ -227,12 +257,14 @@ Based on analyzing completed plans from par-v2-migration, the consistent templat
 ### Decision 4: Language-Agnostic Design
 
 **Requirements:**
+
 - No Elixir/Phoenix/Ash-specific instructions
 - No framework assumptions
 - No language-specific conventions
 - Works for Python, JavaScript, Go, Rust, Java, etc.
 
 **Approach:**
+
 - Directory structure is language-neutral (docs, plans, prd, resources, research)
 - Plan templates use generic "implementation" sections, not code-specific
 - CLAUDE.md template has placeholders for project-specific commands
@@ -241,12 +273,14 @@ Based on analyzing completed plans from par-v2-migration, the consistent templat
 ### Decision 5: Plan Status Workflow
 
 **Preserve from par-v2-migration:**
+
 - Plans start in `_claude/plans/draft/` folder
 - Move to `_claude/plans/in_progress/` when work begins
 - Move to `_claude/plans/completed/` when finished
 - Strong guidance: NEVER work on draft plans without moving them first
 
 **Plugin Implementation:**
+
 - `/dr-plan` creates in `draft/` by default
 - `/dr-plan --in-progress` creates in `in_progress/` directly
 - CLAUDE.md includes strict rules about not executing draft plans
@@ -268,7 +302,7 @@ project-mgmt-plugin/
 │   ├── dr-plan.md                           # Create or refine plan (dual-mode)
 │   └── dr-move-plan.md                      # Move plan between stages
 ├── templates/
-│   ├── CLAUDE.md.template                   # Project structure instructions
+│   ├── CLAUDE-template.md                   # Project structure instructions
 │   ├── plan-template.md                     # Implementation plan format
 │   ├── prd-template.md                      # PRD format
 │   └── research-index-template.md           # Research folder structure
@@ -314,6 +348,7 @@ project-mgmt-plugin/
 **Location:** `commands/dr-init.md`
 
 **Frontmatter:**
+
 ```yaml
 ---
 description: Initialize project with standard directory structure
@@ -324,6 +359,7 @@ allowed-tools: Bash(mkdir:*), Bash(ls:*), Read, Write
 **Behavior:**
 
 **Phase 1: Detect Project State**
+
 1. Check if CLAUDE.md exists
 2. If CLAUDE.md exists, check for version marker: `<!-- Plugin: project-management`
 3. Check if `_claude/` directory exists with expected structure
@@ -335,6 +371,7 @@ allowed-tools: Bash(mkdir:*), Bash(ls:*), Read, Write
 **Phase 2: Handle Based on State**
 
 **STATE A - Fresh Project:**
+
 1. Create directory structure:
    ```
    _claude/
@@ -352,12 +389,14 @@ allowed-tools: Bash(mkdir:*), Bash(ls:*), Read, Write
 4. Show success feedback
 
 **STATE B - Already Initialized:**
+
 1. Verify structure is complete
 2. Create any missing folders/`.gitkeep` files
 3. **NEVER modify existing CLAUDE.md**
 4. Show "already initialized" message
 
 **STATE C - Uninitialized (Has CLAUDE.md but no plugin structure):**
+
 1. Show detection message: "CLAUDE.md exists but not initialized with plugin"
 2. Offer user three options:
    - **[a] Append**: Add plugin template to existing CLAUDE.md
@@ -378,6 +417,7 @@ allowed-tools: Bash(mkdir:*), Bash(ls:*), Read, Write
    - Exit without changes
 
 **CLAUDE.md Template Content:**
+
 - **Version tracking comment** (plugin version, generation date)
 - Welcome message
 - Directory structure explanation
@@ -389,6 +429,7 @@ allowed-tools: Bash(mkdir:*), Bash(ls:*), Read, Write
 - **Note to users:** "This file is yours to customize. The plugin will never automatically modify it."
 
 **User Feedback (First Run):**
+
 ```
 ✅ Project structure initialized!
 
@@ -413,6 +454,7 @@ Next steps:
 ```
 
 **User Feedback (Subsequent Runs):**
+
 ```
 ✅ Project structure verified
 
@@ -430,6 +472,7 @@ Your project is already initialized.
 ```
 
 **User Feedback (Missing Folders, CLAUDE.md Exists):**
+
 ```
 ✅ Project structure updated
 
@@ -442,6 +485,7 @@ Your existing CLAUDE.md has been preserved. Missing directories have been create
 ```
 
 **User Feedback (Uninitialized - Detection):**
+
 ```
 ⚠️  CLAUDE.md exists but project is not initialized with plugin structure
 
@@ -467,6 +511,7 @@ Choice [a/s/c]:
 ```
 
 **User Feedback (Uninitialized - Append Chosen):**
+
 ```
 ✅ Plugin structure added!
 
@@ -497,6 +542,7 @@ Next steps:
 ```
 
 **User Feedback (Uninitialized - Show Chosen):**
+
 ```
 ✅ Folder structure created!
 
@@ -536,6 +582,7 @@ Next steps:
 **Location:** `commands/dr-research.md`
 
 **Frontmatter:**
+
 ```yaml
 ---
 description: Conduct deep research on a topic with extended thinking
@@ -545,10 +592,12 @@ allowed-tools: WebSearch, WebFetch, Read, Write, Bash(mkdir:*)
 ```
 
 **Usage:**
+
 - **With prompt:** `/dr-research [full detailed research prompt]` (supports multi-line)
 - **Interactive:** `/dr-research` (Claude will ask for details)
 
 **Examples:**
+
 ```bash
 /dr-research I need to understand OAuth 2.1 implementation patterns
 in modern frameworks. Focus on PKCE flow, token rotation, and
@@ -558,6 +607,7 @@ storage and XSS attack vectors.
 ```
 
 **Behavior:**
+
 1. **Check for arguments**: If `$ARGUMENTS` is empty, ask user for detailed research prompt interactively
 2. **CRITICAL: Check current date/time** using system environment before any document creation
 3. **Use extended thinking**: Take time to deeply analyze the research request, identify key questions, and plan comprehensive research approach
@@ -571,9 +621,10 @@ storage and XSS attack vectors.
    - `resources.md` - Links and references
    - `recommendations.md` - Actionable recommendations
    - Additional files as needed for complex topics
-6. Use markdown links between files for navigation
+9. Use markdown links between files for navigation
 
 **Directory Structure Created:**
+
 ```
 _claude/research/oauth-implementation-2025-01-05/
 ├── index.md              # Overview with links to other files
@@ -584,6 +635,7 @@ _claude/research/oauth-implementation-2025-01-05/
 ```
 
 **index.md Template:**
+
 ```markdown
 # Research: [Topic]
 
@@ -611,6 +663,7 @@ This research is organized into multiple documents:
 
 **Command Structure in Markdown:**
 The command file should instruct Claude to:
+
 - Check if `$ARGUMENTS` is provided
 - If not, ask for detailed research prompt
 - Use extended thinking to analyze the request
@@ -618,6 +671,7 @@ The command file should instruct Claude to:
 - Create well-structured, thorough documentation
 
 **User Feedback:**
+
 ```
 ✅ Research completed: [topic]
 
@@ -644,6 +698,7 @@ Next steps:
 **Location:** `commands/dr-prd.md`
 
 **Frontmatter:**
+
 ```yaml
 ---
 description: Create or refine a comprehensive PRD with extended thinking
@@ -654,22 +709,26 @@ allowed-tools: Read, Write, Edit, Bash(ls:*), Bash(cp:*), Grep
 
 **Dual-Mode Operation:**
 This command operates in two modes based on the arguments:
+
 1. **CREATE mode**: When no file reference is provided, creates a new PRD
 2. **REFINE mode**: When `@path/to/prd.md` is provided, refines existing PRD
 
 **Usage:**
 
 **CREATE Mode:**
+
 - **With prompt:** `/dr-prd [full feature description and context]` (supports multi-line)
 - **Interactive:** `/dr-prd` (Claude will ask for details)
 
 **REFINE Mode:**
+
 - **Basic:** `/dr-prd @_claude/prd/feature.md [refinement request]`
 - **Skip confirmation:** `/dr-prd @_claude/prd/feature.md [refinement] --no-confirm`
 
 **Examples:**
 
 **Creating a new PRD:**
+
 ```bash
 /dr-prd We need to add real-time collaboration features to our document editor.
 Users should be able to see each other's cursors, make simultaneous edits,
@@ -681,6 +740,7 @@ is Node.js with PostgreSQL, frontend is React.
 ```
 
 **Refining an existing PRD:**
+
 ```bash
 # Add MFA requirement to authentication PRD
 /dr-prd @_claude/prd/authentication-system.md Add multi-factor authentication requirement with TOTP and SMS backup. Should support 99.9% of users enabling MFA.
@@ -698,11 +758,13 @@ is Node.js with PostgreSQL, frontend is React.
 **Behavior:**
 
 **Mode Detection:**
+
 1. Check if `$ARGUMENTS` starts with `@`
 2. If yes → **REFINE mode** (go to Refinement Behavior below)
 3. If no → **CREATE mode** (continue with steps below)
 
 **CREATE Mode Behavior:**
+
 1. **Check for arguments**: If `$ARGUMENTS` is empty, ask user for detailed feature description interactively
 2. **CRITICAL: Check current date** using system environment before document creation
 3. **Use extended thinking**: Deeply analyze the feature request, think through user needs, edge cases, technical considerations, and potential challenges
@@ -719,44 +781,53 @@ is Node.js with PostgreSQL, frontend is React.
 8. Ask clarifying questions if critical information is missing
 
 **REFINE Mode Behavior:**
+
 1. **Parse arguments:**
+
    - Extract file reference (`@path/to/prd.md`)
    - Extract refinement request (text after file reference, before flags)
    - Parse flags: `--no-confirm` (skip confirmation prompt)
 
 2. **Validate PRD file:**
+
    - Verify file exists in `_claude/prd/` directory
    - Confirm file has PRD structure (has required sections)
    - If validation fails: show error with available PRDs
 
 3. **Read and parse existing PRD:**
+
    - Extract metadata (Status, Version, Created, Last Updated)
    - Parse all sections
    - Identify current structure and content
 
 4. **Detect status and check for warnings:**
+
    - **Draft**: Proceed with refinement normally
    - **Under Review**: Show mild warning ("stakeholders may be reviewing")
    - **Approved**: Show strong warning + check for linked plans
    - **Superseded**: Refuse with message ("create new version instead")
 
 5. **Check for linked plans:**
+
    - Search all plan files for references to this PRD: `grep -r "@PRD_PATH" _claude/plans/`
    - If found: List all plans that reference this PRD
    - Include in confirmation message
 
 6. **Create automatic backup:**
+
    - Copy PRD to `.{filename}.backup` in same directory
    - Example: `auth-system.md` → `.auth-system.md.backup`
    - Overwrite backup if exists (keep only most recent)
 
 7. **Use extended thinking to analyze:**
+
    - Deeply understand the existing PRD (problem, requirements, scope)
    - Analyze the refinement request (what changes, why, implications)
    - Plan how to integrate changes while preserving structure
    - Consider impact on linked plans if any
 
 8. **Generate refined PRD:**
+
    - Apply requested changes thoughtfully
    - Preserve PRD structure and format
    - Update metadata:
@@ -770,6 +841,7 @@ is Node.js with PostgreSQL, frontend is React.
    - Maintain all other metadata
 
 9. **Generate diff summary:**
+
    - Identify additions (new sections, requirements, content)
    - Identify modifications (changed sections, updated content)
    - Identify deletions (removed content, if any)
@@ -777,6 +849,7 @@ is Node.js with PostgreSQL, frontend is React.
    - Provide clear, terminal-friendly summary
 
 10. **Request confirmation (unless --no-confirm):**
+
     - Display diff summary
     - If linked plans found: Show warning about plans
     - Show: "Apply these changes? [y/n/diff]"
@@ -786,6 +859,7 @@ is Node.js with PostgreSQL, frontend is React.
     - If --no-confirm flag present: Skip to step 11
 
 11. **Apply changes:**
+
     - Write refined PRD to original file (atomic operation)
     - Preserve file permissions
 
@@ -797,6 +871,7 @@ is Node.js with PostgreSQL, frontend is React.
     - Suggest next steps
 
 **PRD Template Structure:**
+
 ```markdown
 # PRD: [Feature Name]
 
@@ -813,34 +888,41 @@ is Node.js with PostgreSQL, frontend is React.
 ## Goals and Objectives
 
 ### Primary Goals
+
 - [ ] Goal 1
 - [ ] Goal 2
 
 ### Success Metrics
+
 - Metric 1: [How measured]
 - Metric 2: [How measured]
 
 ## User Stories
 
 ### As a [user type]
+
 I want [capability]
 So that [benefit]
 
 **Acceptance Criteria:**
+
 - [ ] Criterion 1
 - [ ] Criterion 2
 
 ## Functional Requirements
 
 ### Must Have
+
 1. Requirement 1
 2. Requirement 2
 
 ### Should Have
+
 1. Requirement 1
 2. Requirement 2
 
 ### Nice to Have
+
 1. Requirement 1
 
 ## Non-Functional Requirements
@@ -862,15 +944,15 @@ So that [benefit]
 ## Timeline and Milestones
 
 | Milestone | Target Date | Status |
-|-----------|-------------|--------|
+| --------- | ----------- | ------ |
 | Phase 1   | [Date]      | [ ]    |
 | Phase 2   | [Date]      | [ ]    |
 
 ## Risks and Mitigation
 
-| Risk | Impact | Likelihood | Mitigation |
-|------|--------|------------|------------|
-| Risk 1 | High | Medium | Strategy |
+| Risk   | Impact | Likelihood | Mitigation |
+| ------ | ------ | ---------- | ---------- |
+| Risk 1 | High   | Medium     | Strategy   |
 
 ## Open Questions
 
@@ -890,11 +972,13 @@ So that [benefit]
 (This section is populated by `/dr-prd` refinement mode)
 
 **Version 1.0** - [Date]
+
 - Initial PRD creation
 ```
 
 **Command Structure in Markdown:**
 The command file should instruct Claude to:
+
 - Detect mode (CREATE vs REFINE) based on `@` in arguments
 - **CREATE mode:**
   - Check if `$ARGUMENTS` is provided
@@ -913,6 +997,7 @@ The command file should instruct Claude to:
   - Apply changes and update metadata
 
 **User Feedback (CREATE mode):**
+
 ```
 ✅ PRD created: _claude/prd/[feature-slug].md
 
@@ -935,6 +1020,7 @@ Next steps:
 ```
 
 **User Feedback (REFINE mode - Success):**
+
 ```
 ✅ PRD refined successfully
 
@@ -961,6 +1047,7 @@ Next steps:
 ```
 
 **User Feedback (REFINE mode - With Linked Plans Warning):**
+
 ```
 ✅ PRD refined successfully
 
@@ -987,6 +1074,7 @@ Recommended actions:
 ```
 
 **User Feedback (REFINE mode - Approved PRD Warning):**
+
 ```
 ⚠️  WARNING: This PRD is Approved
 
@@ -1013,6 +1101,7 @@ Continue with changes to Approved PRD? [y/n]:
 ```
 
 **User Feedback (REFINE mode - Superseded PRD Refusal):**
+
 ```
 ❌ Cannot refine Superseded PRD
 
@@ -1034,6 +1123,7 @@ Instead:
 **Location:** `commands/dr-plan.md`
 
 **Frontmatter:**
+
 ```yaml
 ---
 description: Create or refine a detailed implementation plan with extended thinking
@@ -1044,24 +1134,28 @@ allowed-tools: Read, Write, Edit, Grep, Bash(ls:*), Bash(find:*), Bash(cp:*)
 
 **Dual-Mode Operation:**
 This command operates in two modes based on the arguments:
+
 1. **CREATE mode**: When no `@plan-file` reference is provided, creates a new plan
 2. **REFINE mode**: When `@path/to/plan.md` is provided, refines existing plan
 
 **Usage:**
 
 **CREATE Mode:**
+
 - **With prompt:** `/dr-plan [full implementation context]` (supports multi-line)
 - **With PRD reference:** `/dr-plan [context] @_claude/prd/feature.md` (links to PRD document)
 - **With flag:** `/dr-plan [context] --in-progress` (creates in in_progress/ instead of draft/)
 - **Interactive:** `/dr-plan` (Claude will ask for details)
 
 **REFINE Mode:**
+
 - **Basic:** `/dr-plan @plan-file [refinement request]`
 - **Skip confirmation:** `/dr-plan @plan-file [refinement request] --no-confirm`
 
 **Examples:**
 
 **Creating a new plan:**
+
 ```bash
 # Basic plan without PRD
 /dr-plan Implement user authentication system with email/password and OAuth.
@@ -1083,6 +1177,7 @@ Backend is Express.js with PostgreSQL.
 ```
 
 **Refining an existing plan:**
+
 ```bash
 # Add OAuth support to existing auth plan
 /dr-plan @_claude/plans/draft/001-authentication-system.md Add OAuth 2.0 support with Google and GitHub providers. Include token refresh logic and profile data fetching.
@@ -1100,11 +1195,13 @@ Backend is Express.js with PostgreSQL.
 **Behavior:**
 
 **Mode Detection:**
+
 1. Check if `$ARGUMENTS` contains `@_claude/plans/` (plan file reference)
 2. If yes → **REFINE mode** (go to Refinement Behavior below)
 3. If no → **CREATE mode** (continue with steps below)
 
 **CREATE Mode Behavior:**
+
 1. **Check for arguments**: If `$ARGUMENTS` is empty, ask user for detailed implementation context interactively
 2. **Parse for file references**: Check for `@path/to/prd.md` syntax in arguments
    - If PRD reference found, extract the file path
@@ -1145,24 +1242,29 @@ Backend is Express.js with PostgreSQL.
     - Comprehensive rollback plan
 
 **REFINE Mode Behavior:**
+
 1. **Parse arguments:**
+
    - Extract file reference (`@path/to/plan.md`)
    - Extract refinement request (text after file reference, before flags)
    - Parse flags: `--no-confirm` (skip confirmation prompt)
 
 2. **Validate plan file:**
+
    - Verify file exists and is accessible
    - Confirm file is in a plan folder (draft/, in_progress/, or completed/)
-   - Verify file matches plan naming pattern (XXX-*.md)
+   - Verify file matches plan naming pattern (XXX-\*.md)
    - If validation fails: show helpful error with available plans
 
 3. **Detect plan status:**
+
    - Determine which folder: draft/, in_progress/, or completed/
    - If **completed/**: Refuse with message "Completed plans are historical records and should not be modified. Create a new plan incorporating lessons learned instead."
    - If **in_progress/** and major changes requested: Warn user and suggest moving to draft first
    - If **draft/**: Proceed with all requested changes
 
 4. **Read and analyze existing plan** using extended thinking:
+
    - Parse plan structure (metadata, sections, phases)
    - Understand current approach and reasoning
    - Identify what works well and should be preserved
@@ -1170,6 +1272,7 @@ Backend is Express.js with PostgreSQL.
    - Consider plan context (PRD references, dependencies, etc.)
 
 5. **Analyze refinement request** using extended thinking:
+
    - What specific changes are being requested?
    - Is this targeted improvement or major restructuring?
    - What sections need to change vs. remain unchanged?
@@ -1177,12 +1280,14 @@ Backend is Express.js with PostgreSQL.
    - For in_progress plans: Is this a minor clarification or major change?
 
 6. **Create automatic backup:**
+
    - Before any changes, copy plan to `.{filename}.backup`
    - Example: `001-auth.md` → `.001-auth.md.backup`
    - Backup stays in same directory
    - Only keep most recent backup (overwrite if exists)
 
 7. **Generate refined plan:**
+
    - Apply requested changes thoughtfully
    - Preserve plan number, slug, and filename
    - Maintain plan structure and format
@@ -1197,6 +1302,7 @@ Backend is Express.js with PostgreSQL.
    - Maintain all formatting conventions
 
 8. **Generate diff summary:**
+
    - Compare original vs. refined plan
    - Categorize changes:
      - **ADDITIONS:** New phases, tasks, sections, content
@@ -1207,6 +1313,7 @@ Backend is Express.js with PostgreSQL.
    - Estimate scope: minor changes vs. major restructuring
 
 9. **Confirmation (unless --no-confirm):**
+
    - Display diff summary
    - Show: "Apply these changes? [y/n/diff]"
    - If user enters **y**: Proceed to step 10
@@ -1215,6 +1322,7 @@ Backend is Express.js with PostgreSQL.
    - If --no-confirm flag present: Skip this step entirely
 
 10. **Apply changes:**
+
     - Write refined plan to original file
     - Atomic operation (write to temp, then move)
     - Preserve file permissions
@@ -1229,7 +1337,7 @@ Backend is Express.js with PostgreSQL.
 **Plan Template Structure:**
 (Based on analyzed format from par-v2-migration)
 
-```markdown
+````markdown
 # [Plan Name]
 
 **Created:** [YYYY-MM-DD]
@@ -1262,28 +1370,34 @@ Backend is Express.js with PostgreSQL.
 **Estimated Time:** [X hours]
 
 #### Tasks
+
 - [ ] Specific, actionable task 1
 - [ ] Specific, actionable task 2
 - [ ] Specific, actionable task 3
 
 #### Test Verification
+
 - [ ] Specific test file or suite to verify
 - [ ] Expected test results
 
 #### Code Changes Needed
+
 ```[language]
 // Example code showing the implementation
 ```
+````
 
 ### Phase 2: [Clear Phase Name]
 
 **Estimated Time:** [X hours]
 
 #### Tasks
+
 - [ ] Specific, actionable task 1
 - [ ] Specific, actionable task 2
 
 #### Test Verification
+
 - [ ] Specific test file or suite
 
 ### Phase N: Final Steps
@@ -1291,6 +1405,7 @@ Backend is Express.js with PostgreSQL.
 **Estimated Time:** [X hours]
 
 #### Tasks
+
 - [ ] Documentation updates
 - [ ] Final testing
 - [ ] Review and cleanup
@@ -1323,6 +1438,7 @@ Backend is Express.js with PostgreSQL.
 (Optional section - populated by `/dr-plan` refine mode)
 
 **Refinements:**
+
 - [YYYY-MM-DD]: [Brief description of what was refined]
 - [YYYY-MM-DD]: [Brief description of what was refined]
 
@@ -1331,18 +1447,22 @@ Backend is Express.js with PostgreSQL.
 ## Implementation Notes
 
 **Actual Time Tracking:**
+
 - Phase 1: [Estimated: X hours] (Actual: Y hours)
 - Phase 2: [Estimated: X hours] (Actual: Y hours)
 
 **Key Decisions:**
+
 - [Document important decisions made during implementation]
 
 **Lessons Learned:**
+
 - [Document what worked well and what didn't]
-```
 
 **Command Structure in Markdown:**
+
 The command file should instruct Claude to:
+
 - Detect mode (CREATE vs REFINE) based on `@_claude/plans/` in arguments
 - **CREATE mode:**
   - Check if `$ARGUMENTS` is provided
@@ -1369,63 +1489,76 @@ The command file should instruct Claude to:
   - Update refinement metadata and history
 
 **User Feedback (CREATE mode):**
+
 ```
-✅ Implementation plan created: _claude/plans/[folder]/[number]-[plan-slug].md
+
+✅ Implementation plan created: \_claude/plans/[folder]/[number]-[plan-slug].md
 
 Plan #[number]: [plan name]
-Location: _claude/plans/draft/[number]-[plan-slug].md
+Location: \_claude/plans/draft/[number]-[plan-slug].md
 Status: Draft (not ready for implementation)
-[If PRD referenced: Related PRD: _claude/prd/[prd-name].md]
+[If PRD referenced: Related PRD: \_claude/prd/[prd-name].md]
 
 Comprehensive plan includes:
-  - Executive summary and current state analysis
+
+- Executive summary and current state analysis
   [If PRD referenced: - Requirements aligned with PRD specifications]
-  - [N] phases with detailed tasks
-  - Estimated time: [X] hours total
-  - Test verification for each phase
-  - Dependencies and rollback plan
-  - Success metrics
+- [N] phases with detailed tasks
+- Estimated time: [X] hours total
+- Test verification for each phase
+- Dependencies and rollback plan
+- Success metrics
 
 Key Insights:
-  - [3-5 important considerations Claude identified]
+
+- [3-5 important considerations Claude identified]
   [If PRD referenced: - [Key requirements from PRD that shaped the plan]]
 
 Next steps:
-  1. Review the detailed implementation plan
-  [If PRD referenced: 2. Verify alignment with PRD requirements]
-  2. Refine if needed: /dr-plan @_claude/plans/draft/[number]-[plan-slug].md [changes]
-  3. When ready to implement: /dr-move-plan [plan-name] in-progress
-  4. IMPORTANT: Only work on plans in 'in_progress' folder!
+
+1. Review the detailed implementation plan
+   [If PRD referenced: 2. Verify alignment with PRD requirements]
+2. Refine if needed: /dr-plan @\_claude/plans/draft/[number]-[plan-slug].md [changes]
+3. When ready to implement: /dr-move-plan [plan-name] in-progress
+4. IMPORTANT: Only work on plans in 'in_progress' folder!
 
 Note: Plan created in draft/ - move to in_progress/ before implementing.
+
 ```
 
 **User Feedback (REFINE mode - Success with draft plan):**
+
 ```
+
 ✅ Plan refined successfully
 
 Plan #001: Authentication System
-Location: _claude/plans/draft/001-authentication-system.md
+Location: \_claude/plans/draft/001-authentication-system.md
 Status: Draft (ready for review)
 
 Changes applied:
-  + Added Phase 2.5: OAuth Integration (4 hours)
-  + Added dependency: OAuth provider registration
+
+- Added Phase 2.5: OAuth Integration (4 hours)
+- Added dependency: OAuth provider registration
   ~ Modified Phase 4: Testing - Added OAuth test cases
 
-Backup saved: _claude/plans/draft/.001-authentication-system.md.backup
+Backup saved: \_claude/plans/draft/.001-authentication-system.md.backup
 
 Refinement count: 2 (see Refinement History in plan)
 
 Next steps:
-  1. Review the refined plan
-  2. Refine again if needed: /dr-plan @_claude/plans/draft/001-authentication-system.md [changes]
-  3. When ready: /dr-move-plan 001 in-progress
+
+1. Review the refined plan
+2. Refine again if needed: /dr-plan @\_claude/plans/draft/001-authentication-system.md [changes]
+3. When ready: /dr-move-plan 001 in-progress
+
 ```
 
 **User Feedback (REFINE mode - Warning for in-progress plan with major changes):**
+
 ```
-⚠️  WARNING: This plan is in progress (may have completed tasks).
+
+⚠️ WARNING: This plan is in progress (may have completed tasks).
 
 Current status: in_progress
 Your request: "Completely redesign to use OAuth-first with optional email/password"
@@ -1433,15 +1566,19 @@ Your request: "Completely redesign to use OAuth-first with optional email/passwo
 This appears to be a major structural change that could invalidate completed work.
 
 Recommendations:
-  1. Move plan back to draft for major redesign: /dr-move-plan 003 draft
-  2. Create a new plan for the OAuth-first approach: /dr-plan [new approach]
-  3. Continue with minor adjustments only
+
+1. Move plan back to draft for major redesign: /dr-move-plan 003 draft
+2. Create a new plan for the OAuth-first approach: /dr-plan [new approach]
+3. Continue with minor adjustments only
 
 Proceed with major changes to in-progress plan? [y/n]:
+
 ```
 
 **User Feedback (REFINE mode - Refusal for completed plan):**
+
 ```
+
 ❌ Cannot refine completed plan
 
 Plan #015: Authentication System
@@ -1450,26 +1587,27 @@ Status: Completed (historical record)
 Completed plans are archived for historical reference and should not be modified.
 
 Instead:
-  1. Create a new plan incorporating lessons learned
-  2. Reference the completed plan: /dr-plan [new context] "Building on plan 015..."
-  3. Document what would be done differently in the new plan
+
+1. Create a new plan incorporating lessons learned
+2. Reference the completed plan: /dr-plan [new context] "Building on plan 015..."
+3. Document what would be done differently in the new plan
+
 ```
 
 **User Feedback (REFINE mode - Error: file not found):**
+
 ```
-❌ Plan file not found: _claude/plans/draft/999-nonexistent.md
+
+❌ Plan file not found: \_claude/plans/draft/999-nonexistent.md
 
 Available plans:
-  draft/:
-    - 001-authentication-system.md
-    - 024-new-feature.md
-  in_progress/:
-    - 003-database-migration.md
-  completed/:
-    - 015-oauth-integration.md
+draft/: - 001-authentication-system.md - 024-new-feature.md
+in_progress/: - 003-database-migration.md
+completed/: - 015-oauth-integration.md
 
-Usage: /dr-plan @_claude/plans/draft/001-authentication-system.md [refinement request]
+Usage: /dr-plan @\_claude/plans/draft/001-authentication-system.md [refinement request]
 Tip: Use tab completion for file paths
+
 ```
 
 ### 5. Slash Command: `/dr-move-plan`
@@ -1479,6 +1617,7 @@ Tip: Use tab completion for file paths
 **Location:** `commands/dr-move-plan.md`
 
 **Frontmatter:**
+
 ```yaml
 ---
 description: Move a plan between draft, in_progress, and completed
@@ -1490,6 +1629,7 @@ allowed-tools: Bash(mv:*), Bash(ls:*), Read
 **Usage:** `/dr-move-plan [plan-name-or-number-or-@file] [destination]`
 
 **Examples:**
+
 - `/dr-move-plan 001 in-progress` - Move plan #001 to active work (exact number match)
 - `/dr-move-plan authentication in-progress` - Move to active work (searches by name)
 - `/dr-move-plan auth in-progress` - Partial match (may ask for clarification if multiple "auth" plans exist)
@@ -1498,6 +1638,7 @@ allowed-tools: Bash(mv:*), Bash(ls:*), Read
 - `/dr-move-plan authentication-system draft` - Move back to draft (full name match)
 
 **Behavior:**
+
 1. Parse argument - could be plan number (001), plan name/slug, or file reference (@path)
 2. **If file reference (`@path`) provided:**
    - Extract the file path from the `@` reference
@@ -1515,7 +1656,7 @@ allowed-tools: Bash(mv:*), Bash(ls:*), Read
      - Display all matching plans with their numbers, names, and current locations
      - Ask user: "Multiple plans match '[search term]'. Which plan did you mean?"
      - List options: "1) 001-authentication-system (draft/), 2) 015-oauth-authentication (completed/), ..."
-     - Suggest using file reference for precision: "Or use: /dr-move-plan @_claude/plans/draft/001-authentication-system.md [destination]"
+     - Suggest using file reference for precision: "Or use: /dr-move-plan @\_claude/plans/draft/001-authentication-system.md [destination]"
      - Wait for user to select the correct plan by number or clarify their search
      - Once clarified, proceed to step 5
 5. Confirm source and destination with full plan details
@@ -1526,6 +1667,7 @@ allowed-tools: Bash(mv:*), Bash(ls:*), Read
 **User Feedback:**
 
 **Success (single match):**
+
 ```
 ✅ Plan moved: #001 - Authentication System
 
@@ -1538,6 +1680,7 @@ You can now begin working on this plan.
 ```
 
 **Ambiguous (multiple matches):**
+
 ```
 ⚠️  Multiple plans match 'auth':
 
@@ -1552,6 +1695,7 @@ Which plan did you mean? Please specify by:
 ```
 
 **No match:**
+
 ```
 ❌ No plans found matching 'xyz'
 
@@ -1575,7 +1719,7 @@ Usage:
 
 ## Templates
 
-### Template: CLAUDE.md.template
+### Template: CLAUDE-template.md
 
 ```markdown
 <!--
@@ -1597,25 +1741,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Structure
 
 This project follows a structured approach to planning, documentation, and implementation.
+```
 
-```
-_claude/
-├── docs/           # Technical documentation and architecture
-│   └── .gitkeep
-├── plans/          # Implementation plans
-│   ├── draft/      # Plans being developed or refined
-│   │   └── .gitkeep
-│   ├── in_progress/ # Plans currently being implemented
-│   │   └── .gitkeep
-│   └── completed/  # Finished and archived plans
-│       └── .gitkeep
-├── prd/            # Product Requirement Documents
-│   └── .gitkeep
-├── resources/      # Reference materials and external docs
-│   └── .gitkeep
-└── research/       # Structured research output
-    └── .gitkeep
-```
+\_claude/
+├── docs/ # Technical documentation and architecture
+│ └── .gitkeep
+├── plans/ # Implementation plans
+│ ├── draft/ # Plans being developed or refined
+│ │ └── .gitkeep
+│ ├── in_progress/ # Plans currently being implemented
+│ │ └── .gitkeep
+│ └── completed/ # Finished and archived plans
+│ └── .gitkeep
+├── prd/ # Product Requirement Documents
+│ └── .gitkeep
+├── resources/ # Reference materials and external docs
+│ └── .gitkeep
+└── research/ # Structured research output
+└── .gitkeep
+
+````
 
 **Note:** `.gitkeep` files ensure empty directories can be committed to git.
 
@@ -1709,19 +1854,22 @@ When creating any document with dates or timestamps, ALWAYS check the system env
 **Build:**
 ```bash
 # [Add your build command]
-```
+````
 
 **Test:**
+
 ```bash
 # [Add your test command]
 ```
 
 **Lint:**
+
 ```bash
 # [Add your lint command]
 ```
 
 **Development:**
+
 ```bash
 # [Add your development server command]
 ```
@@ -1750,11 +1898,8 @@ When working on tasks from a plan phase:
 
 This ensures proper tracking and prevents premature task completion marking.
 
----
-
 <!-- End of plugin-managed section -->
 <!-- Add project-specific instructions below -->
-```
 
 ---
 
@@ -1765,12 +1910,14 @@ This ensures proper tracking and prevents premature task completion marking.
 **Estimated Time:** 2 hours
 
 #### Tasks
+
 - [x] Research Claude Code plugin architecture
 - [x] Analyze existing plan formats
 - [x] Make architectural decisions
 - [x] Create comprehensive plugin plan document
 
 #### Deliverables
+
 - [x] plugin-plan.md with research and specifications
 
 ### Phase 2: Plugin Foundation ✅
@@ -1778,6 +1925,7 @@ This ensures proper tracking and prevents premature task completion marking.
 **Estimated Time:** 2 hours
 
 #### Tasks
+
 - [x] Create plugin directory structure
 - [x] Write plugin.json manifest
 - [x] Create README.md with plugin documentation
@@ -1785,147 +1933,163 @@ This ensures proper tracking and prevents premature task completion marking.
 - [x] Create .gitignore for plugin
 
 #### Deliverables
+
 - [x] project-mgmt-plugin/ with proper structure
 - [x] plugin.json with metadata
 - [x] README.md with installation and usage instructions
 
 #### Success Criteria
+
 - [x] Plugin directory follows Claude Code standards
 - [x] Manifest is valid JSON with required fields
 - [x] Documentation is clear and comprehensive
 
-### Phase 3: CLAUDE.md Template
+### Phase 3: CLAUDE.md Template ✅
 
 **Estimated Time:** 1 hour
 
 #### Tasks
-- [ ] Extract language-agnostic content from par-v2-migration CLAUDE.md
-- [ ] Create CLAUDE.md.template in templates/
-- [ ] Add plugin-specific instructions
-- [ ] Add placeholders for project-specific content
-- [ ] Include plan workflow rules
+
+- [x] Extract language-agnostic content from par-v2-migration CLAUDE.md
+- [x] Create CLAUDE-template.md in templates/
+- [x] Add plugin-specific instructions
+- [x] Add placeholders for project-specific content
+- [x] Include plan workflow rules
 
 #### Deliverables
-- [ ] templates/CLAUDE.md.template
+
+- [x] templates/CLAUDE-template.md
 
 #### Success Criteria
-- [ ] Template is language-agnostic
-- [ ] Includes all directory structure explanations
-- [ ] Has clear plan workflow rules
-- [ ] Includes placeholders for customization
 
-### Phase 4: Plan Template
+- [x] Template is language-agnostic
+- [x] Includes all directory structure explanations
+- [x] Has clear plan workflow rules
+- [x] Includes placeholders for customization
+
+### Phase 4: Plan Template ✅
 
 **Estimated Time:** 1.5 hours
 
 #### Tasks
-- [ ] Create plan-template.md based on analyzed format
-- [ ] Include all standard sections
-- [ ] Add phase structure with checkboxes
-- [ ] Include time tracking fields
-- [ ] Add placeholders and instructions
-- [ ] Test template with example content
+
+- [x] Create plan-template.md based on analyzed format
+- [x] Include all standard sections
+- [x] Add phase structure with checkboxes
+- [x] Include time tracking fields
+- [x] Add placeholders and instructions
+- [x] Test template with example content
 
 #### Deliverables
-- [ ] templates/plan-template.md
+
+- [x] templates/plan-template.md
 
 #### Success Criteria
-- [ ] Template matches analyzed format from par-v2-migration
-- [ ] All sections present with clear structure
-- [ ] Checkboxes formatted correctly
-- [ ] Easy to fill in with actual content
 
-### Phase 5: Supporting Templates
+- [x] Template matches analyzed format from par-v2-migration
+- [x] All sections present with clear structure
+- [x] Checkboxes formatted correctly
+- [x] Easy to fill in with actual content
+
+### Phase 5: Supporting Templates ✅
 
 **Estimated Time:** 2 hours
 
 #### Tasks
-- [ ] Create prd-template.md
-- [ ] Create research-index-template.md
-- [ ] Create research section templates (findings, resources, recommendations)
-- [ ] Add example content to each template
-- [ ] Ensure consistency across templates
+
+- [x] Create prd-template.md
+- [x] Create research-index-template.md
+- [x] Create research section templates (findings, resources, recommendations)
+- [x] Add example content to each template
+- [x] Ensure consistency across templates
 
 #### Deliverables
-- [ ] templates/prd-template.md
-- [ ] templates/research-index-template.md
-- [ ] templates/research-findings-template.md
-- [ ] templates/research-resources-template.md
-- [ ] templates/research-recommendations-template.md
+
+- [x] templates/prd-template.md
+- [x] templates/research-index-template.md
+- [x] templates/research-findings-template.md
+- [x] templates/research-resources-template.md
+- [x] templates/research-recommendations-template.md
 
 #### Success Criteria
-- [ ] All templates are comprehensive
-- [ ] Examples are clear and helpful
-- [ ] Formatting is consistent
+
+- [x] All templates are comprehensive
+- [x] Examples are clear and helpful
+- [x] Formatting is consistent
 
 ### Phase 6: Slash Command - /dr-init
 
 **Estimated Time:** 3 hours
 
 #### Tasks
-- [ ] Create commands/dr-init.md
-- [ ] Add frontmatter with description and allowed-tools
-- [ ] Write command logic with smart state detection:
-  - [ ] **Phase 1: Detect Project State**
-    - [ ] Check if CLAUDE.md exists
-    - [ ] If exists, check for version marker `<!-- Plugin: project-management`
-    - [ ] Check if `_claude/` directory exists
-    - [ ] Determine state: Fresh / Initialized / Uninitialized
-  - [ ] **Phase 2: Handle State A (Fresh Project)**
-    - [ ] Create full directory structure (docs, plans/draft, plans/in_progress, plans/completed, prd, resources, research)
-    - [ ] **Create .gitkeep files in ALL 7 leaf directories**
-    - [ ] Create CLAUDE.md from template with version marker
-    - [ ] Show success feedback
-  - [ ] **Phase 3: Handle State B (Already Initialized)**
-    - [ ] Verify structure is complete
-    - [ ] Create any missing folders/gitkeep files
-    - [ ] NEVER modify CLAUDE.md
-    - [ ] Show "already initialized" message
-  - [ ] **Phase 4: Handle State C (Uninitialized - has CLAUDE.md but no plugin structure)**
-    - [ ] Show detection message with three options
-    - [ ] Wait for user input [a/s/c]
-    - [ ] **If [a] Append:**
-      - [ ] Create `_claude/` structure and gitkeep files
-      - [ ] Read existing CLAUDE.md content
-      - [ ] Prepend version marker to top
-      - [ ] Append plugin template sections to end
-      - [ ] Show what was added
-    - [ ] **If [s] Show:**
-      - [ ] Create `_claude/` structure and gitkeep files
-      - [ ] Display full template content to terminal
-      - [ ] Show instructions for manual copy/paste
-    - [ ] **If [c] Cancel:**
-      - [ ] Exit without changes
-- [ ] Test State A: Fresh project (no CLAUDE.md, no _claude/)
-- [ ] Test State B: Already initialized (has version marker or _claude/)
-- [ ] Test State C: Uninitialized with empty CLAUDE.md - choose [a] Append
-- [ ] Test State C: Uninitialized with content in CLAUDE.md - choose [s] Show
-- [ ] Test State C: Uninitialized - choose [c] Cancel
-- [ ] Test missing folders scenario (has CLAUDE.md with marker, missing some folders)
-- [ ] Test in git repo: verify empty directories are tracked after git add
-- [ ] Test version marker detection works correctly
+
+- [x] Create commands/dr-init.md
+- [x] Add frontmatter with description and allowed-tools
+- [x] Write command logic with smart state detection:
+  - [x] **Phase 1: Detect Project State**
+    - [x] Check if CLAUDE.md exists
+    - [x] If exists, check for version marker `<!-- Plugin: project-management`
+    - [x] Check if `_claude/` directory exists
+    - [x] Determine state: Fresh / Initialized / Uninitialized
+  - [x] **Phase 2: Handle State A (Fresh Project)**
+    - [x] Create full directory structure (docs, plans/draft, plans/in_progress, plans/completed, prd, resources, research)
+    - [x] **Create .gitkeep files in ALL 7 leaf directories**
+    - [x] Create CLAUDE.md from template with version marker
+    - [x] Show success feedback
+  - [x] **Phase 3: Handle State B (Already Initialized)**
+    - [x] Verify structure is complete
+    - [x] Create any missing folders/gitkeep files
+    - [x] NEVER modify CLAUDE.md
+    - [x] Show "already initialized" message
+  - [x] **Phase 4: Handle State C (Uninitialized - has CLAUDE.md but no plugin structure)**
+    - [x] Show detection message with three options
+    - [x] Wait for user input [a/s/c]
+    - [x] **If [a] Append:**
+      - [x] Create `_claude/` structure and gitkeep files
+      - [x] Read existing CLAUDE.md content
+      - [x] Prepend version marker to top
+      - [x] Append plugin template sections to end
+      - [x] Show what was added
+    - [x] **If [s] Show:**
+      - [x] Create `_claude/` structure and gitkeep files
+      - [x] Display full template content to terminal
+      - [x] Show instructions for manual copy/paste
+    - [x] **If [c] Cancel:**
+      - [x] Exit without changes
+- [x] Test State A: Fresh project (no CLAUDE.md, no \_claude/)
+- [x] Test State A: Empty CLAUDE.md (should treat as fresh project)
+- [x] Test State B: Already initialized (has version marker or \_claude/)
+- [x] Test State C: Uninitialized with content in CLAUDE.md - choose [a] Append
+- [x] Test State C: Uninitialized with content in CLAUDE.md - choose [s] Show
+- [x] Test State C: Uninitialized - choose [c] Cancel
+- [x] Test missing folders scenario (has CLAUDE.md with marker, missing some folders)
+- [x] Test in git repo: verify empty directories are tracked after git add
+- [x] Test version marker detection works correctly
 
 #### Deliverables
-- [ ] commands/dr-init.md
+
+- [x] commands/dr-init.md
 
 #### Success Criteria
-- [ ] Creates directory structure correctly
-- [ ] **Creates .gitkeep files in all 7 leaf directories**
-- [ ] .gitkeep files allow empty directories to be committed to git
-- [ ] Generates CLAUDE.md from template (first run only)
-- [ ] CLAUDE.md includes plugin version comment for tracking
-- [ ] **NEVER modifies existing CLAUDE.md** (user-owned after creation)
-- [ ] Safe to run multiple times (creates missing pieces, preserves CLAUDE.md)
-- [ ] Shows appropriate feedback for first run vs. subsequent runs
-- [ ] Clear user feedback mentioning git commit (first run)
-- [ ] Friendly "already initialized" message (subsequent runs)
-- [ ] Works in both git and non-git repositories
+
+- [x] Creates directory structure correctly
+- [x] **Creates .gitkeep files in all 7 leaf directories**
+- [x] .gitkeep files allow empty directories to be committed to git
+- [x] Generates CLAUDE.md from template (first run only)
+- [x] CLAUDE.md includes plugin version comment for tracking
+- [x] **NEVER modifies existing CLAUDE.md** (user-owned after creation)
+- [x] Safe to run multiple times (creates missing pieces, preserves CLAUDE.md)
+- [x] Shows appropriate feedback for first run vs. subsequent runs
+- [x] Clear user feedback mentioning git commit (first run)
+- [x] Friendly "already initialized" message (subsequent runs)
+- [x] Works in both git and non-git repositories
 
 ### Phase 7: Slash Command - /dr-research
 
 **Estimated Time:** 4 hours
 
 #### Tasks
+
 - [ ] Create commands/dr-research.md
 - [ ] Add frontmatter with description and multi-line argument support
 - [ ] Write command that instructs Claude to:
@@ -1943,9 +2107,11 @@ This ensures proper tracking and prevents premature task completion marking.
 - [ ] Test interactive mode (no arguments)
 
 #### Deliverables
+
 - [ ] commands/dr-research.md
 
 #### Success Criteria
+
 - [ ] Accepts multi-line prompts via `$ARGUMENTS`
 - [ ] Falls back to interactive mode if no arguments
 - [ ] Uses extended thinking for deep analysis
@@ -1960,6 +2126,7 @@ This ensures proper tracking and prevents premature task completion marking.
 **Estimated Time:** 6 hours (includes refinement functionality)
 
 #### Tasks
+
 - [ ] Create commands/dr-prd.md
 - [ ] Add frontmatter with description, argument support, and tools for refinement (Grep, Edit, Bash)
 - [ ] Write command that implements dual-mode operation:
@@ -1999,9 +2166,11 @@ This ensures proper tracking and prevents premature task completion marking.
 - [ ] Test backup creation and restoration
 
 #### Deliverables
+
 - [ ] commands/dr-prd.md (with dual-mode implementation)
 
 #### Success Criteria
+
 - [ ] **CREATE mode:**
   - [ ] Accepts multi-line prompts via `$ARGUMENTS`
   - [ ] Falls back to interactive mode if no arguments
@@ -2028,8 +2197,9 @@ This ensures proper tracking and prevents premature task completion marking.
 **Estimated Time:** 8 hours (includes dual-mode create + refine functionality)
 
 #### Tasks
+
 - [ ] Create commands/dr-plan.md
-- [ ] Add frontmatter with description, multi-line argument support, and dual-mode tools (Edit, Bash(cp:*))
+- [ ] Add frontmatter with description, multi-line argument support, and dual-mode tools (Edit, Bash(cp:\*))
 - [ ] Support PRD references via `@path/to/prd.md` syntax
 - [ ] Write command that implements dual-mode operation:
   - [ ] **Mode detection**: Check if `$ARGUMENTS` contains `@_claude/plans/` (plan file reference)
@@ -2095,10 +2265,13 @@ This ensures proper tracking and prevents premature task completion marking.
 - [ ] Test confirmation flow (y/n/diff options)
 
 #### Deliverables
+
 - [ ] commands/dr-plan.md (with dual-mode implementation)
 
 #### Success Criteria
+
 **CREATE mode:**
+
 - [ ] Accepts multi-line prompts via `$ARGUMENTS`
 - [ ] **Supports PRD references** via `@path/to/prd.md` syntax
 - [ ] Reads and analyzes PRD content when referenced
@@ -2122,6 +2295,7 @@ This ensures proper tracking and prevents premature task completion marking.
 - [ ] User feedback includes plan number
 
 **REFINE mode:**
+
 - [ ] Detects plan file reference and switches to refine mode
 - [ ] Validates plan file exists and is in correct location
 - [ ] Uses extended thinking for refinement analysis
@@ -2137,6 +2311,7 @@ This ensures proper tracking and prevents premature task completion marking.
 - [ ] Provides clear success feedback
 
 **Both modes:**
+
 - [ ] Work seamlessly from same command
 - [ ] Automatic mode detection via `@_claude/plans/` reference
 
@@ -2145,6 +2320,7 @@ This ensures proper tracking and prevents premature task completion marking.
 **Estimated Time:** 4 hours
 
 #### Tasks
+
 - [ ] Create commands/dr-refine-plan.md
 - [ ] Add frontmatter with description and argument support
 - [ ] Write command that instructs Claude to:
@@ -2187,9 +2363,11 @@ This ensures proper tracking and prevents premature task completion marking.
 - [ ] Test error handling (file not found, not a plan file, invalid path)
 
 #### Deliverables
+
 - [ ] commands/dr-refine-plan.md
 
 #### Success Criteria
+
 - [ ] Accepts file reference via `@path/to/plan.md` syntax
 - [ ] Uses extended thinking to analyze existing plan and refinement request
 - [ ] Creates automatic backup before any changes
@@ -2211,6 +2389,7 @@ This ensures proper tracking and prevents premature task completion marking.
 **Estimated Time:** 2.5 hours
 
 #### Tasks
+
 - [ ] Create commands/dr-move-plan.md
 - [ ] Add frontmatter with description and argument handling (including file references)
 - [ ] Write command logic:
@@ -2237,9 +2416,11 @@ This ensures proper tracking and prevents premature task completion marking.
 - [ ] Test invalid file reference (file not in plan folders, file doesn't exist)
 
 #### Deliverables
+
 - [ ] commands/dr-move-plan.md
 
 #### Success Criteria
+
 - [ ] Accepts three argument types: plan number (001), plan name, or file reference (@path)
 - [ ] **File reference support**: Can use `@_claude/plans/draft/001-plan.md` for exact file specification
 - [ ] File reference works with autocomplete in terminal/editor
@@ -2258,6 +2439,7 @@ This ensures proper tracking and prevents premature task completion marking.
 **Estimated Time:** 3 hours
 
 #### Tasks
+
 - [ ] Complete README.md with:
   - [ ] Installation instructions
   - [ ] Usage examples for each command
@@ -2274,12 +2456,14 @@ This ensures proper tracking and prevents premature task completion marking.
 - [ ] Create example project using plugin
 
 #### Deliverables
+
 - [ ] Complete README.md
 - [ ] CHANGELOG.md
 - [ ] Tested plugin
 - [ ] Example project
 
 #### Success Criteria
+
 - [ ] All commands work as specified
 - [ ] Documentation is clear and complete
 - [ ] Example project demonstrates workflow
@@ -2290,6 +2474,7 @@ This ensures proper tracking and prevents premature task completion marking.
 **Estimated Time:** 2 hours
 
 #### Tasks
+
 - [ ] Create marketplace.json for distribution
 - [ ] Add license file (MIT recommended)
 - [ ] Create contributing guidelines
@@ -2298,6 +2483,7 @@ This ensures proper tracking and prevents premature task completion marking.
 - [ ] Create announcement/introduction document
 
 #### Deliverables
+
 - [ ] .claude-plugin/marketplace.json
 - [ ] LICENSE
 - [ ] CONTRIBUTING.md
@@ -2305,6 +2491,7 @@ This ensures proper tracking and prevents premature task completion marking.
 - [ ] Distribution package
 
 #### Success Criteria
+
 - [ ] Plugin installs correctly via `/plugin install`
 - [ ] All metadata is accurate
 - [ ] License is appropriate
@@ -2315,12 +2502,14 @@ This ensures proper tracking and prevents premature task completion marking.
 ## Success Metrics
 
 ### Plugin Completeness
+
 - [ ] All 5 slash commands implemented and working (dual-mode for PRD and plan)
 - [ ] All 5 templates created and tested
 - [ ] Plugin installs without errors
 - [ ] Documentation is comprehensive
 
 ### Functionality
+
 - [ ] `/dr-init` creates directory structure and CLAUDE.md
 - [ ] `/dr-research` conducts research and creates multi-file documentation
 - [ ] `/dr-prd` creates PRD from template OR refines existing PRD (dual-mode)
@@ -2328,6 +2517,7 @@ This ensures proper tracking and prevents premature task completion marking.
 - [ ] `/dr-move-plan` moves plans between stages
 
 ### Refinement Capabilities (Dual-Mode)
+
 - [ ] `/dr-prd` detects existing files and switches to refine mode
 - [ ] PRD refinement uses extended thinking for analysis
 - [ ] PRD refinement creates automatic backups
@@ -2343,18 +2533,21 @@ This ensures proper tracking and prevents premature task completion marking.
 - [ ] Both commands support --no-confirm flag in refine mode
 
 ### Usability
+
 - [ ] Commands have clear descriptions in `/help`
 - [ ] User feedback is informative
 - [ ] Error messages are helpful
 - [ ] Workflow is intuitive
 
 ### Quality
+
 - [ ] Language-agnostic (works for any tech stack)
 - [ ] Templates are consistent and professional
 - [ ] No hardcoded paths or assumptions
 - [ ] Handles edge cases gracefully
 
 ### Distribution
+
 - [ ] Plugin can be installed via marketplace
 - [ ] README has clear instructions
 - [ ] Version is tagged appropriately
@@ -2382,17 +2575,20 @@ This ensures proper tracking and prevents premature task completion marking.
 ## Future Enhancements (Post v1.0)
 
 ### v1.1 Considerations
+
 - [ ] `/dr-archive-plan` - Archive old completed plans
 - [ ] Status badges in plan files
 - [ ] Plan template variations (small change, large feature, migration)
 
 ### v1.2 Considerations
+
 - [ ] Hooks for automatic plan status updates
 - [ ] MCP integration for external project management tools
 - [ ] Custom template support per project
 - [ ] Plan metrics and analytics
 
 ### v2.0 Considerations
+
 - [ ] Skills for autonomous plan creation
 - [ ] Agent for code review against plans
 - [ ] Interactive plan refinement
@@ -2403,6 +2599,7 @@ This ensures proper tracking and prevents premature task completion marking.
 ## Lessons from par-v2-migration
 
 ### What to Preserve
+
 ✅ Directory structure with clear separation
 ✅ Plan workflow with draft/in_progress/completed
 ✅ Strict rules about not executing draft plans
@@ -2411,6 +2608,7 @@ This ensures proper tracking and prevents premature task completion marking.
 ✅ Sequential plan numbering for chronological tracking
 
 ### What to Generalize
+
 🔄 Remove Elixir/Phoenix/Ash specific content
 🔄 Remove specific framework constraints (Argon2, binary IDs, etc.)
 🔄 Make commands work for any language
@@ -2418,6 +2616,7 @@ This ensures proper tracking and prevents premature task completion marking.
 🔄 Generalize error handling patterns
 
 ### What to Add
+
 ➕ PRD workflow (missing from original)
 ➕ PRD-Plan linking via `@file` references in `/dr-plan`
 ➕ Explicit research command with extended thinking
@@ -2474,3 +2673,7 @@ This ensures proper tracking and prevents premature task completion marking.
 **Created:** 2025-11-05
 **Status:** Planning Complete - Ready for Implementation
 **Next Phase:** Phase 2 - Plugin Foundation
+
+```
+
+```

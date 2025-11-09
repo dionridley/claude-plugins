@@ -1,0 +1,15 @@
+{
+  "name": "local-dev",
+  "owner": {
+    "name": "Dev Team",
+    "email": "dev@example.com"
+  },
+  "plugins": [
+    {
+      "name": "project-management",
+      "source": "./project-mgmt-plugin",
+      "description": "Structured project management with research, PRDs, and implementation plans",
+      "version": "1.0.0"
+    }
+  ]
+}
