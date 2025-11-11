@@ -1,0 +1,184 @@
+---
+description: Conduct deep research on a topic with extended thinking
+argument-hint: [detailed research prompt - can be multi-line]
+allowed-tools: WebSearch, WebFetch, Read, Write, Bash(mkdir:*)
+---
+
+# Conduct Deep Research with Extended Thinking
+
+This command conducts comprehensive research on a topic using extended thinking and documents findings in organized markdown files.
+
+## Instructions for Claude
+
+You are executing the `/dr-research` command to conduct deep research and create structured documentation.
+
+### Phase 1: Gather Research Topic
+
+1. **Check for arguments:**
+
+   - If `$ARGUMENTS` is provided and not empty: Use it as the research prompt
+   - If `$ARGUMENTS` is empty: Ask the user interactively for a detailed research prompt
+
+2. **Interactive prompt (if needed):**
+   - Ask: "What topic would you like me to research? Please provide as much detail as possible, including:"
+   - " - Core questions you want answered"
+   - " - Specific aspects to focus on"
+   - " - Context for why this research matters"
+   - " - Any constraints or requirements"
+   - Wait for user response before proceeding
+
+### Phase 2: Plan Research Approach
+
+1. **CRITICAL: Check current date/time**
+
+   - Access the system environment to get the ACTUAL current date
+   - Format as YYYY-MM-DD
+   - NEVER use hardcoded or assumed dates
+
+2. **Use extended thinking to analyze the research request:**
+
+   - What are the key questions that need to be answered?
+   - What different angles should be explored?
+   - What are the most important aspects to research?
+   - What sources would be most valuable?
+   - How should the findings be organized?
+   - What would make this research most useful?
+
+3. **Extract core topic:**
+
+   - Identify the main topic from the research prompt
+   - Create a slug from the topic (lowercase, hyphens for spaces, remove special chars)
+   - Example: "OAuth 2.1 Implementation Patterns" → "oauth-2.1-implementation-patterns"
+
+4. **Create directory name:**
+   - Combine slug with actual current date: `[slug]-[YYYY-MM-DD]`
+   - Example: `oauth-2.1-implementation-patterns-2025-11-09`
+
+### Phase 3: Conduct Research
+
+1. **Create research directory:**
+
+   ```bash
+   mkdir -p _claude/research/[slug]-[date]
+   ```
+
+2. **Conduct thorough research:**
+
+   - Use WebSearch to find current information
+   - Use WebFetch to read detailed documentation, articles, and resources
+   - Explore multiple perspectives and approaches
+   - Look for best practices, common pitfalls, and real-world examples
+   - Gather specific technical details, code examples, and case studies
+   - Consider trade-offs, alternatives, and edge cases
+
+3. **Take comprehensive notes:**
+   - Document all important findings
+   - Capture key insights and patterns
+   - Note sources and references
+   - Identify actionable recommendations
+
+### Phase 4: Structure Documentation
+
+1. **Create multiple interconnected markdown files:**
+
+   **index.md** - Overview and navigation:
+
+   ```markdown
+   # Research: [Topic Name]
+
+   **Date:** [YYYY-MM-DD from system]
+   **Research Question:** [Original research prompt or question]
+
+   ## Overview
+
+   [1-2 paragraph executive summary of what was researched and key insights discovered]
+
+   ## Structure
+
+   This research is organized into multiple documents:
+
+   - **[Findings](./findings.md)** - Core research findings and analysis
+   - **[Resources](./resources.md)** - Links, documentation, and references
+   - **[Recommendations](./recommendations.md)** - Actionable recommendations
+   - [**[Additional Topic](./additional-file.md)** - Deep dive into specific aspect (if needed)]
+
+   ## Key Takeaways
+
+   1. [Most important insight or finding]
+   2. [Second most important insight or finding]
+   3. [Third most important insight or finding]
+   4. [Additional key takeaways as needed]
+   ```
+
+   **findings.md** - Use the research-findings-template.md as a guide:
+
+   - Comprehensive analysis of the topic
+   - Technical details and explanations
+   - Comparison of approaches or solutions
+   - Best practices and patterns
+   - Common pitfalls and challenges
+   - Code examples or diagrams where relevant
+
+   **resources.md** - Use the research-resources-template.md as a guide:
+
+   - Links to documentation
+   - Articles and blog posts
+   - Case studies
+   - Tools and libraries
+   - Community resources
+   - Each resource with brief annotation explaining its value
+
+   **recommendations.md** - Use the research-recommendations-template.md as a guide:
+
+   - Actionable next steps
+   - Recommended approaches
+   - Implementation priorities
+   - Things to avoid
+   - Further research needed
+
+2. **Create additional files as needed:**
+
+   - If the topic is complex, create additional files for deep dives
+   - Name them descriptively (e.g., `security-considerations.md`, `implementation-examples.md`)
+   - Link to them from index.md
+
+3. **Use markdown links for navigation:**
+   - Link between files using relative paths: `[Text](./filename.md)`
+   - Create a cohesive set of documents that work together
+
+### Phase 5: Confirm Completion
+
+1. **Show success message:**
+
+   ```
+   ✅ Research completed: [topic name]
+
+   Created: _claude/research/[slug]-[date]/
+     - index.md (overview and navigation)
+     - findings.md (comprehensive research findings)
+     - resources.md (links and references)
+     - recommendations.md (actionable next steps)
+     [- additional-file.md (topic-specific deep dive)]
+
+   Key Findings:
+     - [3-5 bullet points with most important insights]
+
+   Next steps:
+     - Review detailed findings in _claude/research/[slug]-[date]/
+     - Create PRD if ready: /dr-prd [feature description]
+     - Create implementation plan: /dr-plan [plan description]
+   ```
+
+## Important Notes
+
+1. **Always check system date/time** - Never use hardcoded dates
+2. **Use extended thinking** - Take time to deeply analyze the research request before starting
+3. **Be comprehensive** - Research thoroughly and document everything important
+4. **Create multiple files** - Don't put everything in one file; organize logically
+5. **Add cross-references** - Link between files for easy navigation
+6. **Provide value** - Make the research actionable and useful, not just informational
+7. **Use templates as guides** - The research templates in the plugin provide structure
+
+## Execute Now
+
+Follow the instructions above to conduct comprehensive research and create well-organized documentation.
