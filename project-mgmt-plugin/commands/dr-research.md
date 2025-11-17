@@ -14,10 +14,12 @@ You are executing the `/dr-research` command to conduct deep research and create
 
 ### Phase 1: Gather Research Topic
 
-1. **Check for arguments:**
+**CRITICAL**: The command arguments are provided in the `<command-args>` tag at the top of this message.
 
-   - If `$ARGUMENTS` is provided and not empty: Use it as the research prompt
-   - If `$ARGUMENTS` is empty: Ask the user interactively for a detailed research prompt
+1. **Check the `<command-args>` tag for arguments:**
+
+   - If `<command-args>` contains text (not empty): Use it as the research prompt
+   - If `<command-args>` is empty: Ask the user interactively for a detailed research prompt
 
 2. **Interactive prompt (if needed):**
    - Ask: "What topic would you like me to research? Please provide as much detail as possible, including:"
