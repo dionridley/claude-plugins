@@ -2269,27 +2269,27 @@ This ensures proper tracking and prevents premature task completion marking.
     - [x] Show completion summary with decisions made
 - [x] **Update plan-template.md** with Assumptions Made and Open Questions sections
 - [x] **Add checkbox + status conventions** to Important Notes section
-- [ ] Test CREATE mode with detailed multi-line implementation context
+- [x] Test CREATE mode with detailed multi-line implementation context
 - [x] **Test with PRD reference** (e.g., `/dr-plan [context] @_claude/prd/feature.md`)
-- [ ] Test PRD file validation (nonexistent file, invalid path)
-- [ ] Test with --in-progress flag
-- [ ] Test interactive mode (no arguments)
-- [ ] Test numbering: verify correct number when existing plans present
+- [x] Test PRD file validation (nonexistent file, invalid path)
+- [x] Test with --in-progress flag
+- [x] Test interactive mode (no arguments)
+- [x] Test numbering: verify correct number when existing plans present
 - [x] Test numbering: verify starts at 001 when no plans exist
-- [ ] Test numbering edge case: all plans in completed/, new plan gets correct next number
-- [ ] Test numbering edge case: plans spread across all three folders, finds highest correctly
-- [ ] Test numbering: verify scans ALL three folders (not just draft/)
-- [ ] Test REFINE mode with draft plan
-- [ ] Test REFINE mode with in_progress plan + minor changes
-- [ ] Test REFINE mode with in_progress plan + major changes (should warn)
-- [ ] Test REFINE mode with completed plan (should refuse)
-- [ ] Test --no-confirm flag in refine mode
-- [ ] Test backup creation and restoration
-- [ ] Test diff summary accuracy
-- [ ] Test confirmation flow (y/n/diff options)
-- [ ] **Test QUESTION RESOLUTION mode** with plan containing blocking questions
-- [ ] **Test QUESTION RESOLUTION mode** with plan containing uncertain assumptions
-- [ ] **Test QUESTION RESOLUTION mode** with no unresolved items (should show ready message)
+- [x] Test numbering edge case: all plans in completed/, new plan gets correct next number
+- [x] Test numbering edge case: plans spread across all three folders, finds highest correctly
+- [x] Test numbering: verify scans ALL three folders (not just draft/)
+- [x] Test REFINE mode with draft plan
+- [x] Test REFINE mode with in_progress plan + minor changes
+- [x] Test REFINE mode with in_progress plan + major changes (should warn)
+- [x] Test REFINE mode with completed plan (should refuse)
+- [x] Test --no-confirm flag in refine mode
+- [x] Test backup creation and restoration
+- [x] Test diff summary accuracy
+- [x] Test confirmation flow (y/n/diff options)
+- [x] **Test QUESTION RESOLUTION mode** with plan containing blocking questions
+- [x] **Test QUESTION RESOLUTION mode** with plan containing uncertain assumptions
+- [x] **Test QUESTION RESOLUTION mode** with no unresolved items (should show ready message)
 
 #### Deliverables
 
