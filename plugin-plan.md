@@ -2192,66 +2192,90 @@ This ensures proper tracking and prevents premature task completion marking.
   - [x] Provides clear success feedback
 - [x] Both modes work seamlessly from same command
 
-### Phase 9: Slash Command - /dr-plan
+### Phase 9: Slash Command - /dr-plan ✅
 
-**Estimated Time:** 8 hours (includes dual-mode create + refine functionality)
+**Estimated Time:** 10 hours (includes dual-mode create + refine + question resolution functionality)
 
 #### Tasks
 
-- [ ] Create commands/dr-plan.md
-- [ ] Add frontmatter with description, multi-line argument support, and dual-mode tools (Edit, Bash(cp:\*))
-- [ ] Support PRD references via `@path/to/prd.md` syntax
-- [ ] Write command that implements dual-mode operation:
-  - [ ] **Mode detection**: Check if `$ARGUMENTS` contains `@_claude/plans/` (plan file reference)
-  - [ ] If yes → REFINE mode, if no → CREATE mode
-  - [ ] **CREATE mode:**
-  - [ ] Check if `$ARGUMENTS` is provided, if not ask interactively
-  - [ ] **Parse for PRD file references** (`@path/to/prd.md` syntax)
-  - [ ] If PRD referenced, verify file exists and read its contents
-  - [ ] Use PRD content to inform plan creation (requirements, scope, etc.)
-  - [ ] Parse for `--in-progress` flag
-  - [ ] **FIRST: Check system date/time** (critical requirement)
-  - [ ] **Scan ALL plan folders** (draft, in_progress, completed) using ls or find - MUST check all three
-  - [ ] Collect all filenames from all three folders
-  - [ ] Parse filenames to extract numbers (handle 001-xxx.md, 042-xxx.md formats)
-  - [ ] Find the single highest number across all folders combined
-  - [ ] Determine next plan number (increment highest + 1, start at 001 if none exist anywhere)
-  - [ ] Format number with leading zeros (001-999) or as-is if over 999
-  - [ ] Handle edge case: all plans in completed/, draft and in_progress empty
-  - [ ] Use extended thinking to analyze implementation requirements
-  - [ ] Break down into logical phases with realistic tasks
-  - [ ] Identify dependencies and potential challenges
-  - [ ] Estimate time for each phase
-  - [ ] Optionally examine current codebase for context
-  - [ ] Extract plan name and create slug
-  - [ ] Determine destination folder (draft/ or in_progress/)
-  - [ ] Read plan template
-  - [ ] Create plan file with numbered format: `[number]-[slug].md` with ALL sections thoughtfully populated using ACTUAL current date
-  - [ ] If PRD referenced, include path in plan metadata
-  - [ ] Provide summary of key insights and considerations including plan number
-  - [ ] **REFINE mode:**
-    - [ ] Parse file reference (`@path/to/plan.md`)
-    - [ ] Parse refinement request (text after file reference, before flags)
-    - [ ] Parse `--no-confirm` flag
-    - [ ] Validate plan file exists and is in a plan folder
-    - [ ] Detect plan status (draft/in_progress/completed)
-    - [ ] If completed: Refuse with message (historical records)
-    - [ ] If in_progress + major changes: Warn user, suggest moving to draft
-    - [ ] Read and analyze existing plan using extended thinking
-    - [ ] Analyze refinement request using extended thinking
-    - [ ] Create automatic backup (`.{filename}.backup`)
-    - [ ] Generate refined plan (preserve number, update metadata, add refinement history)
-    - [ ] Generate diff summary (additions, modifications, deletions, preserved)
-    - [ ] Unless --no-confirm: Ask for confirmation (y/n/diff)
-    - [ ] Apply changes atomically
-    - [ ] Confirm success with backup location
+- [x] Create commands/dr-plan.md
+- [x] Add frontmatter with description, multi-line argument support, and dual-mode tools (Edit, Bash(cp:\*))
+- [x] Support PRD references via `@path/to/prd.md` syntax
+- [x] Write command that implements tri-mode operation:
+  - [x] **Mode detection**: Check `<command-args>` tag for mode determination
+  - [x] If contains `@_claude/plans/` + "answer questions" → QUESTION RESOLUTION mode
+  - [x] If contains `@_claude/plans/` (no question keywords) → REFINE mode
+  - [x] If no plan file reference → CREATE mode
+  - [x] **CREATE mode:**
+  - [x] Check if arguments provided, if not ask interactively
+  - [x] **Parse for PRD file references** (`@path/to/prd.md` syntax)
+  - [x] If PRD referenced, verify file exists and read its contents
+  - [x] Use PRD content to inform plan creation (requirements, scope, etc.)
+  - [x] Parse for `--in-progress` flag
+  - [x] **FIRST: Check system date/time** (critical requirement)
+  - [x] **Scan ALL plan folders** (draft, in_progress, completed) using ls or find - MUST check all three
+  - [x] Collect all filenames from all three folders
+  - [x] Parse filenames to extract numbers (handle 001-xxx.md, 042-xxx.md formats)
+  - [x] Find the single highest number across all folders combined
+  - [x] Determine next plan number (increment highest + 1, start at 001 if none exist anywhere)
+  - [x] Format number with leading zeros (001-999) or as-is if over 999
+  - [x] Handle edge case: all plans in completed/, draft and in_progress empty
+  - [x] Use extended thinking to analyze implementation requirements
+  - [x] Break down into logical phases with realistic tasks
+  - [x] Identify dependencies and potential challenges
+  - [x] **Identify Assumptions and Open Questions** (new collaborative feature)
+  - [x] Estimate time for each phase
+  - [x] Optionally examine current codebase for context
+  - [x] Extract plan name and create slug
+  - [x] Determine destination folder (draft/ or in_progress/)
+  - [x] Read plan template
+  - [x] Create plan file with numbered format: `[number]-[slug].md` with ALL sections thoughtfully populated using ACTUAL current date
+  - [x] **Include Assumptions Made section** with `[x]` confirmed and `[ ] [?]` uncertain markers
+  - [x] **Include Open Questions & Decisions section** with Blocking `[AWAITING]` and Non-Blocking `[OPEN]` categories
+  - [x] If PRD referenced, include path in plan metadata
+  - [x] Provide summary of key insights and considerations including plan number
+  - [x] **Show blocking question count** in success message with resolution instructions
+  - [x] **REFINE mode:**
+    - [x] Parse file reference (`@path/to/plan.md`)
+    - [x] Parse refinement request (text after file reference, before flags)
+    - [x] Parse `--no-confirm` flag
+    - [x] Validate plan file exists and is in a plan folder
+    - [x] Detect plan status (draft/in_progress/completed)
+    - [x] If completed: Refuse with message (historical records)
+    - [x] If in_progress + major changes: Warn user, suggest moving to draft
+    - [x] Read and analyze existing plan using extended thinking
+    - [x] Analyze refinement request using extended thinking
+    - [x] Create automatic backup (`.{filename}.backup`)
+    - [x] Generate refined plan (preserve number, update metadata, add refinement history)
+    - [x] Generate diff summary (additions, modifications, deletions, preserved)
+    - [x] Unless --no-confirm: Ask for confirmation (y/n/diff)
+    - [x] Apply changes atomically
+    - [x] Confirm success with backup location
+  - [x] **QUESTION RESOLUTION mode:** (new collaborative decision-making feature)
+    - [x] Parse plan file reference from arguments
+    - [x] Read and parse plan file
+    - [x] Extract uncertain assumptions (`[ ]` with `[?]` marker)
+    - [x] Extract blocking questions (`[AWAITING]` status)
+    - [x] Extract non-blocking questions (`[OPEN]` status)
+    - [x] Show summary of items needing resolution
+    - [x] **Resolve blocking questions first** using AskUserQuestion tool
+    - [x] Document decisions with `[DECIDED: YYYY-MM-DD]` status
+    - [x] Add Decision and Rationale to resolved questions
+    - [x] Offer to resolve uncertain assumptions
+    - [x] Offer to resolve non-blocking questions
+    - [x] Create backup before updates
+    - [x] Update plan with all resolutions
+    - [x] Add refinement history entry
+    - [x] Show completion summary with decisions made
+- [x] **Update plan-template.md** with Assumptions Made and Open Questions sections
+- [x] **Add checkbox + status conventions** to Important Notes section
 - [ ] Test CREATE mode with detailed multi-line implementation context
-- [ ] **Test with PRD reference** (e.g., `/dr-plan [context] @_claude/prd/feature.md`)
+- [x] **Test with PRD reference** (e.g., `/dr-plan [context] @_claude/prd/feature.md`)
 - [ ] Test PRD file validation (nonexistent file, invalid path)
 - [ ] Test with --in-progress flag
 - [ ] Test interactive mode (no arguments)
 - [ ] Test numbering: verify correct number when existing plans present
-- [ ] Test numbering: verify starts at 001 when no plans exist
+- [x] Test numbering: verify starts at 001 when no plans exist
 - [ ] Test numbering edge case: all plans in completed/, new plan gets correct next number
 - [ ] Test numbering edge case: plans spread across all three folders, finds highest correctly
 - [ ] Test numbering: verify scans ALL three folders (not just draft/)
@@ -2263,126 +2287,80 @@ This ensures proper tracking and prevents premature task completion marking.
 - [ ] Test backup creation and restoration
 - [ ] Test diff summary accuracy
 - [ ] Test confirmation flow (y/n/diff options)
+- [ ] **Test QUESTION RESOLUTION mode** with plan containing blocking questions
+- [ ] **Test QUESTION RESOLUTION mode** with plan containing uncertain assumptions
+- [ ] **Test QUESTION RESOLUTION mode** with no unresolved items (should show ready message)
 
 #### Deliverables
 
-- [ ] commands/dr-plan.md (with dual-mode implementation)
+- [x] commands/dr-plan.md (with tri-mode implementation: CREATE, REFINE, QUESTION RESOLUTION)
+- [x] Updated templates/plan-template.md with Assumptions and Open Questions sections
 
 #### Success Criteria
 
 **CREATE mode:**
 
-- [ ] Accepts multi-line prompts via `$ARGUMENTS`
-- [ ] **Supports PRD references** via `@path/to/prd.md` syntax
-- [ ] Reads and analyzes PRD content when referenced
-- [ ] Includes PRD path in plan metadata section
-- [ ] Validates PRD file exists before proceeding
-- [ ] Falls back to interactive mode if no arguments
-- [ ] Uses extended thinking for implementation breakdown
-- [ ] **Automatically numbers plans sequentially** (001, 002, 003...)
-- [ ] **Scans ALL three folders** (draft, in_progress, completed) to find highest existing number
-- [ ] Finds highest number even if all plans are in completed/ folder
-- [ ] Formats numbers with leading zeros (001-999)
-- [ ] Handles 4+ digit numbers correctly (1000+)
-- [ ] Creates plans in correct folder (respects --in-progress flag)
-- [ ] Filename format: `[number]-[slug].md`
-- [ ] Plan has ALL sections meaningfully filled with detailed phases and tasks
-- [ ] Phases are logical, tasks are specific and actionable
-- [ ] Time estimates are realistic
-- [ ] Dependencies and risks identified
-- [ ] Can optionally read codebase for current state analysis
-- [ ] Clear warnings about draft vs in-progress status
-- [ ] User feedback includes plan number
+- [x] Accepts multi-line prompts via `$ARGUMENTS`
+- [x] **Supports PRD references** via `@path/to/prd.md` syntax
+- [x] Reads and analyzes PRD content when referenced
+- [x] Includes PRD path in plan metadata section
+- [x] Validates PRD file exists before proceeding
+- [x] Falls back to interactive mode if no arguments
+- [x] Uses extended thinking for implementation breakdown
+- [x] **Automatically numbers plans sequentially** (001, 002, 003...)
+- [x] **Scans ALL three folders** (draft, in_progress, completed) to find highest existing number
+- [x] Finds highest number even if all plans are in completed/ folder
+- [x] Formats numbers with leading zeros (001-999)
+- [x] Handles 4+ digit numbers correctly (1000+)
+- [x] Creates plans in correct folder (respects --in-progress flag)
+- [x] Filename format: `[number]-[slug].md`
+- [x] Plan has ALL sections meaningfully filled with detailed phases and tasks
+- [x] **Includes Assumptions Made section** with confirmed `[x]` and uncertain `[ ] [?]` markers
+- [x] **Includes Open Questions & Decisions section** with Blocking and Non-Blocking categories
+- [x] Phases are logical, tasks are specific and actionable
+- [x] Time estimates are realistic
+- [x] Dependencies and risks identified
+- [x] Can optionally read codebase for current state analysis
+- [x] Clear warnings about draft vs in-progress status
+- [x] User feedback includes plan number
+- [x] **User feedback includes blocking question count** with resolution instructions
 
 **REFINE mode:**
 
-- [ ] Detects plan file reference and switches to refine mode
-- [ ] Validates plan file exists and is in correct location
-- [ ] Uses extended thinking for refinement analysis
-- [ ] Creates automatic backups
-- [ ] Respects plan status (Draft/In-Progress/Completed)
-- [ ] Draft plans: all changes allowed
-- [ ] In-progress plans: warns about major changes
-- [ ] Completed plans: refuses to modify
-- [ ] Shows clear diff summary
-- [ ] Requires confirmation (unless --no-confirm)
-- [ ] Preserves plan number and slug
-- [ ] Updates refinement history
-- [ ] Provides clear success feedback
+- [x] Detects plan file reference and switches to refine mode
+- [x] Validates plan file exists and is in correct location
+- [x] Uses extended thinking for refinement analysis
+- [x] Creates automatic backups
+- [x] Respects plan status (Draft/In-Progress/Completed)
+- [x] Draft plans: all changes allowed
+- [x] In-progress plans: warns about major changes
+- [x] Completed plans: refuses to modify
+- [x] Shows clear diff summary
+- [x] Requires confirmation (unless --no-confirm)
+- [x] Preserves plan number and slug
+- [x] Updates refinement history
+- [x] Provides clear success feedback
 
-**Both modes:**
+**QUESTION RESOLUTION mode:** (new)
 
-- [ ] Work seamlessly from same command
-- [ ] Automatic mode detection via `@_claude/plans/` reference
+- [x] Detects "answer questions" or "resolve questions" keywords in arguments
+- [x] Parses plan file and extracts unresolved items
+- [x] Categorizes: uncertain assumptions, blocking questions, non-blocking questions
+- [x] Shows summary of items needing resolution
+- [x] **Prioritizes blocking questions** - resolves first using AskUserQuestion tool
+- [x] Documents decisions with `[DECIDED: YYYY-MM-DD]` status + Decision + Rationale
+- [x] Offers to verify uncertain assumptions after blocking questions
+- [x] Offers to resolve non-blocking questions
+- [x] Creates backup before updates
+- [x] Updates plan with all resolutions and refinement history
+- [x] Shows completion summary with all decisions made
+- [x] Indicates when plan is ready for implementation (all blocking resolved)
 
-### Phase 10: Slash Command - /dr-move-plan
+**All modes:**
 
-**Estimated Time:** 4 hours
-
-#### Tasks
-
-- [ ] Create commands/dr-refine-plan.md
-- [ ] Add frontmatter with description and argument support
-- [ ] Write command that instructs Claude to:
-  - [ ] Parse arguments for file reference (`@path/to/plan.md`)
-  - [ ] Parse refinement request (text after file reference, before flags)
-  - [ ] Parse flags: `--no-confirm` (skip confirmation)
-  - [ ] **Validate plan file exists** and is in a plan folder
-  - [ ] **Detect plan status** (draft, in_progress, or completed)
-  - [ ] **Read and analyze existing plan** using extended thinking
-  - [ ] **Analyze refinement request** using extended thinking
-  - [ ] **If plan is completed**: Refuse with message (historical records shouldn't change)
-  - [ ] **If plan is in_progress** and major changes requested: Warn user, suggest moving to draft
-  - [ ] **Create automatic backup**: `.{filename}.backup` before any changes
-  - [ ] **Generate refined plan**:
-    - Preserve plan number, slug, and core metadata
-    - Apply requested changes intelligently
-    - Maintain plan structure and format
-    - Update "Last Refined" timestamp
-    - Add refinement note to metadata
-  - [ ] **Generate diff summary**:
-    - List additions (new phases, tasks, sections)
-    - List modifications (changed content)
-    - List deletions (if any)
-    - Show what's preserved
-  - [ ] **Unless --no-confirm**: Ask for confirmation
-    - Options: y (yes), n (no), diff (show detailed diff first)
-    - If diff: show line-by-line changes, then ask again
-  - [ ] **Apply changes**: Write refined plan to original file
-  - [ ] **Confirm success**: Show what was changed and where backup is
-- [ ] Test basic refinement (add content to plan)
-- [ ] Test backup creation and restoration
-- [ ] Test confirmation flow (y/n/diff options)
-- [ ] Test --no-confirm flag
-- [ ] Test with draft plan (should work smoothly)
-- [ ] Test with in_progress plan + minor changes (should work)
-- [ ] Test with in_progress plan + major changes (should warn)
-- [ ] Test with completed plan (should refuse)
-- [ ] Test diff summary accuracy
-- [ ] Test file reference with autocomplete
-- [ ] Test error handling (file not found, not a plan file, invalid path)
-
-#### Deliverables
-
-- [ ] commands/dr-refine-plan.md
-
-#### Success Criteria
-
-- [ ] Accepts file reference via `@path/to/plan.md` syntax
-- [ ] Uses extended thinking to analyze existing plan and refinement request
-- [ ] Creates automatic backup before any changes
-- [ ] Generates clear, readable diff summary
-- [ ] Requires confirmation before applying changes (unless --no-confirm)
-- [ ] Preserves plan number and slug
-- [ ] Status-aware: different behavior for draft/in_progress/completed
-- [ ] Draft plans: allows all changes
-- [ ] In-progress plans: warns about major changes
-- [ ] Completed plans: refuses to modify
-- [ ] Applies changes intelligently while preserving plan structure
-- [ ] Clear user feedback showing what changed
-- [ ] Handles errors gracefully with helpful messages
-- [ ] Works with autocomplete for file paths
-- [ ] Maintains plan quality equivalent to original creation
+- [x] Work seamlessly from same command
+- [x] Automatic mode detection via argument patterns
+- [x] Checkbox and status conventions documented in Important Notes
 
 ### Phase 10: Slash Command - /dr-move-plan
 
@@ -2510,27 +2488,40 @@ This ensures proper tracking and prevents premature task completion marking.
 
 ### Functionality
 
-- [ ] `/dr-init` creates directory structure and CLAUDE.md
-- [ ] `/dr-research` conducts research and creates multi-file documentation
-- [ ] `/dr-prd` creates PRD from template OR refines existing PRD (dual-mode)
-- [ ] `/dr-plan` creates implementation plan OR refines existing plan (dual-mode)
+- [x] `/dr-init` creates directory structure and CLAUDE.md
+- [x] `/dr-research` conducts research and creates multi-file documentation
+- [x] `/dr-prd` creates PRD from template OR refines existing PRD (dual-mode)
+- [x] `/dr-plan` creates implementation plan OR refines/resolves questions (tri-mode)
 - [ ] `/dr-move-plan` moves plans between stages
 
-### Refinement Capabilities (Dual-Mode)
+### Refinement Capabilities (Dual-Mode for PRD, Tri-Mode for Plan)
 
-- [ ] `/dr-prd` detects existing files and switches to refine mode
-- [ ] PRD refinement uses extended thinking for analysis
-- [ ] PRD refinement creates automatic backups
-- [ ] PRD refinement shows diff summary before applying changes
-- [ ] PRD refinement checks for linked plans and warns user
-- [ ] PRD refinement respects status (Draft/Approved/Superseded)
-- [ ] `/dr-plan` detects existing plan files and switches to refine mode
-- [ ] Plan refinement uses extended thinking for analysis
-- [ ] Plan refinement creates automatic backups
-- [ ] Plan refinement shows diff summary before applying changes
-- [ ] Plan refinement maintains plan number and structure
-- [ ] Plan refinement respects status (Draft/In-Progress/Completed)
-- [ ] Both commands support --no-confirm flag in refine mode
+- [x] `/dr-prd` detects existing files and switches to refine mode
+- [x] PRD refinement uses extended thinking for analysis
+- [x] PRD refinement creates automatic backups
+- [x] PRD refinement shows diff summary before applying changes
+- [x] PRD refinement checks for linked plans and warns user
+- [x] PRD refinement respects status (Draft/Approved/Superseded)
+- [x] `/dr-plan` detects existing plan files and switches to refine mode
+- [x] Plan refinement uses extended thinking for analysis
+- [x] Plan refinement creates automatic backups
+- [x] Plan refinement shows diff summary before applying changes
+- [x] Plan refinement maintains plan number and structure
+- [x] Plan refinement respects status (Draft/In-Progress/Completed)
+- [x] Both commands support --no-confirm flag in refine mode
+
+### Collaborative Decision-Making (Question Resolution Mode)
+
+- [x] `/dr-plan` supports QUESTION RESOLUTION mode via "answer questions" keywords
+- [x] Plans include Assumptions Made section with `[x]`/`[ ] [?]` markers
+- [x] Plans include Open Questions with Blocking `[AWAITING]` and Non-Blocking `[OPEN]`
+- [x] Question Resolution mode extracts unresolved items from plan
+- [x] Blocking questions prioritized and resolved first using AskUserQuestion
+- [x] Decisions documented with `[DECIDED: YYYY-MM-DD]` status + Decision + Rationale
+- [x] Uncertain assumptions can be verified interactively
+- [x] Non-blocking questions can be resolved optionally
+- [x] Plan updated with all resolutions and refinement history
+- [x] Clear indication when plan is ready for implementation (all blocking resolved)
 
 ### Usability
 
@@ -2626,6 +2617,8 @@ This ensures proper tracking and prevents premature task completion marking.
 ➕ Automatic sequential plan numbering (001, 002, etc.)
 ➕ Command namespacing with `dr-` prefix to prevent collisions
 ➕ File reference support for direct specification
+➕ **Collaborative Decision-Making** with Assumptions and Open Questions sections
+➕ **Interactive Question Resolution** mode for resolving blocking decisions
 
 ---
 
@@ -2660,6 +2653,10 @@ This ensures proper tracking and prevents premature task completion marking.
 - **Date/Time Handling**: ALWAYS check system environment for current date/time before inserting into any document - NEVER use hardcoded or guessed dates
 - **Git Integration**: `.gitkeep` files added to all leaf directories so empty folders can be committed to version control
 - Commands produce comprehensive, thoughtful output - not just empty templates
+- **Collaborative Decision-Making**: Plans include "Assumptions Made" and "Open Questions & Decisions" sections for tracking uncertain items and blocking decisions
+- **Question Status Conventions**: Assumptions use `[x]` (confirmed), `[ ]` (unverified), `[?]` (uncertain); Questions use `[AWAITING]` (blocking), `[OPEN]` (non-blocking), `[DECIDED: YYYY-MM-DD]` (resolved)
+- **Interactive Question Resolution**: `/dr-plan @plan answer questions` triggers interactive Q&A mode using AskUserQuestion tool to resolve blocking questions before implementation
+- **Decision Documentation**: Resolved questions include Decision and Rationale fields for future reference
 
 ### Community Contribution
 
@@ -2671,9 +2668,13 @@ This ensures proper tracking and prevents premature task completion marking.
 ---
 
 **Created:** 2025-11-05
-**Status:** Planning Complete - Ready for Implementation
-**Next Phase:** Phase 2 - Plugin Foundation
+**Last Updated:** 2025-11-23
+**Status:** Phase 9 Complete - Testing Pending
+**Next Phase:** Phase 10 - /dr-move-plan command
 
-```
+**Progress Summary:**
 
-```
+- Phases 1-9: ✅ Complete (dr-init, dr-research, dr-prd, dr-plan implemented)
+- Phase 9 includes: CREATE, REFINE, and QUESTION RESOLUTION modes
+- Collaborative Decision-Making feature added (Assumptions + Open Questions)
+- Phase 10-12: Pending (dr-move-plan, documentation, distribution)

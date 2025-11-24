@@ -18,6 +18,40 @@
 - [Specific TODOs or placeholders]
 - [Test status if applicable]
 
+## Assumptions Made
+
+These assumptions were made during plan creation. Challenge any that seem incorrect.
+
+- [x] [Confirmed assumption based on codebase or requirements]
+- [ ] [Assumption that may need verification] [?]
+- [ ] [Another uncertain assumption] [?]
+
+> Items marked `[?]` are uncertain - please confirm or correct these before implementation.
+>
+> To resolve: `/dr-plan @this-plan.md answer questions`
+
+## Open Questions & Decisions
+
+### Blocking (must resolve before implementation)
+
+- [ ] **[Question Topic]** [AWAITING]
+  [Clear question that needs user input]
+  - Option A: [First option with brief explanation]
+  - Option B: [Second option with brief explanation]
+
+<!--
+When resolved, update to:
+- [x] **[Question Topic]** [DECIDED: YYYY-MM-DD]
+  [Original question]
+  > **Decision:** [What was decided]
+  > **Rationale:** [Why this decision was made]
+-->
+
+### Non-Blocking (can resolve during implementation)
+
+- [ ] **[Question Topic]** [OPEN]
+  [Question that's nice to resolve but doesn't block progress]
+
 ## Success Criteria
 
 - [ ] Specific deliverable 1
@@ -105,7 +139,13 @@
 - Phase 2: [Estimated: X hours] (Actual: Y hours)
 
 **Key Decisions:**
-- [Document important decisions made during implementation]
+(Summary of major decisions from Open Questions & Decisions section)
+- [Decision 1]: [Brief summary] (See Open Questions for full rationale)
+- [Decision 2]: [Brief summary]
+
+**Assumptions Validated:**
+- [x] [Assumption that was confirmed during implementation]
+- [ ] [Assumption that needed to change] → [What changed]
 
 **Lessons Learned:**
 - [Document what worked well and what didn't]
