@@ -2368,49 +2368,49 @@ This ensures proper tracking and prevents premature task completion marking.
 
 #### Tasks
 
-- [ ] Create commands/dr-move-plan.md
-- [ ] Add frontmatter with description and argument handling (including file references)
-- [ ] Write command logic:
-  - [ ] Parse argument (could be plan number "001", plan name, or file reference "@path")
-  - [ ] **If file reference**: Extract path, verify file exists and is valid plan file
-  - [ ] **Otherwise search** for plan in all folders:
-    - [ ] If number: Match files starting with that number (e.g., `001-*.md`)
-    - [ ] If name: Search for files containing that name/slug (allow partial matches)
-  - [ ] **Handle multiple matches**: Display list and ask user to clarify
-  - [ ] **Handle no matches**: Show helpful error with all available plans
-  - [ ] Validate destination folder
-  - [ ] Move file **preserving the number prefix**
-  - [ ] Confirm to user with plan number, name, and both locations
-  - [ ] Handle errors gracefully (plan not found, already in destination, invalid file reference, etc.)
-- [ ] Test moving by plan number (e.g., `/dr-move-plan 001 in-progress`)
-- [ ] Test moving by plan name (e.g., `/dr-move-plan authentication in-progress`)
-- [ ] **Test moving by file reference** (e.g., `/dr-move-plan @_claude/plans/draft/001-auth.md in-progress`)
-- [ ] Test file reference with autocomplete
-- [ ] Test moving between all folder combinations
-- [ ] Test error handling (invalid plan, invalid destination, invalid file path)
-- [ ] **Test ambiguous matches**: Verify displays all matches and asks for clarification
-- [ ] **Test partial name matching**: Verify "auth" finds "authentication-system"
-- [ ] **Test no match**: Verify shows helpful list of all available plans
-- [ ] Test invalid file reference (file not in plan folders, file doesn't exist)
+- [x] Create commands/dr-move-plan.md
+- [x] Add frontmatter with description and argument handling (including file references)
+- [x] Write command logic:
+  - [x] Parse argument (could be plan number "001", plan name, or file reference "@path")
+  - [x] **If file reference**: Extract path, verify file exists and is valid plan file
+  - [x] **Otherwise search** for plan in all folders:
+    - [x] If number: Match files starting with that number (e.g., `001-*.md`)
+    - [x] If name: Search for files containing that name/slug (allow partial matches)
+  - [x] **Handle multiple matches**: Display list and ask user to clarify
+  - [x] **Handle no matches**: Show helpful error with all available plans
+  - [x] Validate destination folder
+  - [x] Move file **preserving the number prefix**
+  - [x] Confirm to user with plan number, name, and both locations
+  - [x] Handle errors gracefully (plan not found, already in destination, invalid file reference, etc.)
+- [x] Test moving by plan number (e.g., `/dr-move-plan 001 in-progress`)
+- [x] Test moving by plan name (e.g., `/dr-move-plan authentication in-progress`)
+- [x] **Test moving by file reference** (e.g., `/dr-move-plan @_claude/plans/draft/001-auth.md in-progress`)
+- [x] Test file reference with autocomplete
+- [x] Test moving between all folder combinations
+- [x] Test error handling (invalid plan, invalid destination, invalid file path)
+- [x] **Test ambiguous matches**: Verify displays all matches and asks for clarification
+- [x] **Test partial name matching**: Verify "auth" finds "authentication-system"
+- [x] **Test no match**: Verify shows helpful list of all available plans
+- [x] Test invalid file reference (file not in plan folders, file doesn't exist)
 
 #### Deliverables
 
-- [ ] commands/dr-move-plan.md
+- [x] commands/dr-move-plan.md
 
 #### Success Criteria
 
-- [ ] Accepts three argument types: plan number (001), plan name, or file reference (@path)
-- [ ] **File reference support**: Can use `@_claude/plans/draft/001-plan.md` for exact file specification
-- [ ] File reference works with autocomplete in terminal/editor
-- [ ] Supports partial name matching (e.g., "auth" matches "authentication-system")
-- [ ] Finds plans regardless of current location
-- [ ] **Handles ambiguous matches**: Lists all matches, asks user to clarify, suggests file reference option
-- [ ] **Handles no matches**: Shows all available plans with helpful guidance
-- [ ] Moves files correctly **preserving number prefix**
-- [ ] Confirmation shows plan number, name, source and destination
-- [ ] Handles edge cases (plan not found, already in destination, ambiguous names, invalid file path)
-- [ ] Clear, informative, user-friendly error and confirmation messages
-- [ ] Never moves a plan without being certain which one the user meant
+- [x] Accepts three argument types: plan number (001), plan name, or file reference (@path)
+- [x] **File reference support**: Can use `@_claude/plans/draft/001-plan.md` for exact file specification
+- [x] File reference works with autocomplete in terminal/editor
+- [x] Supports partial name matching (e.g., "auth" matches "authentication-system")
+- [x] Finds plans regardless of current location
+- [x] **Handles ambiguous matches**: Lists all matches, asks user to clarify, suggests file reference option
+- [x] **Handles no matches**: Shows all available plans with helpful guidance
+- [x] Moves files correctly **preserving number prefix**
+- [x] Confirmation shows plan number, name, source and destination
+- [x] Handles edge cases (plan not found, already in destination, ambiguous names, invalid file path)
+- [x] Clear, informative, user-friendly error and confirmation messages
+- [x] Never moves a plan without being certain which one the user meant
 
 ### Phase 11: Documentation and Testing
 
@@ -2492,7 +2492,7 @@ This ensures proper tracking and prevents premature task completion marking.
 - [x] `/dr-research` conducts research and creates multi-file documentation
 - [x] `/dr-prd` creates PRD from template OR refines existing PRD (dual-mode)
 - [x] `/dr-plan` creates implementation plan OR refines/resolves questions (tri-mode)
-- [ ] `/dr-move-plan` moves plans between stages
+- [x] `/dr-move-plan` moves plans between stages
 
 ### Refinement Capabilities (Dual-Mode for PRD, Tri-Mode for Plan)
 
@@ -2668,13 +2668,13 @@ This ensures proper tracking and prevents premature task completion marking.
 ---
 
 **Created:** 2025-11-05
-**Last Updated:** 2025-11-23
-**Status:** Phase 9 Complete - Testing Pending
-**Next Phase:** Phase 10 - /dr-move-plan command
+**Last Updated:** 2025-11-24
+**Status:** Phase 10 Complete
+**Next Phase:** Phase 11 - Documentation and Testing
 
 **Progress Summary:**
 
-- Phases 1-9: ✅ Complete (dr-init, dr-research, dr-prd, dr-plan implemented)
+- Phases 1-10: ✅ Complete (all 5 commands implemented and tested)
 - Phase 9 includes: CREATE, REFINE, and QUESTION RESOLUTION modes
 - Collaborative Decision-Making feature added (Assumptions + Open Questions)
-- Phase 10-12: Pending (dr-move-plan, documentation, distribution)
+- Phase 11-12: Pending (documentation, distribution)
