@@ -526,6 +526,91 @@ MIT License - see LICENSE file for details
   - Language-agnostic design
   - Automatic backups and safety confirmations
 
+## Troubleshooting
+
+### Commands not appearing in `/help`
+
+**Problem**: After installation, the `dr-*` commands don't show up.
+
+**Solutions**:
+1. Verify plugin is in correct directory: `~/.claude/plugins/project-management/`
+2. Check that `plugin.json` exists in `.claude-plugin/` subdirectory
+3. Restart Claude Code session
+4. Run `/plugin list` to verify plugin is recognized
+
+### `/dr-init` says "already initialized" but structure is incomplete
+
+**Problem**: Running init reports success but some folders are missing.
+
+**Solution**: This is expected - init only reports what it created. Check the actual directories:
+```bash
+ls -la _claude/plans/
+```
+If folders are truly missing, the command should have created them. Try running `/dr-init` again.
+
+### Plan numbering skipped a number
+
+**Problem**: Expected plan 003 but got 004.
+
+**Explanation**: Plan numbers are determined by scanning all three folders (draft, in_progress, completed). If a plan 003 exists anywhere, even in completed/, the next plan will be 004. This is intentional to maintain chronological ordering.
+
+### `/dr-move-plan` can't find my plan
+
+**Problem**: Command says "no plans found" but the plan exists.
+
+**Solutions**:
+1. Use exact plan number: `/dr-move-plan 001 in-progress`
+2. Use file reference: `/dr-move-plan @_claude/plans/draft/001-plan-name.md in-progress`
+3. Check spelling - partial matches are case-sensitive
+4. Verify plan is in `_claude/plans/` directory structure
+
+### PRD or Plan refinement not working
+
+**Problem**: Refine mode doesn't detect my file.
+
+**Solutions**:
+1. Ensure path starts with `@`: `/dr-prd @_claude/prd/my-feature.md [changes]`
+2. For plans, path must include `_claude/plans/`: `/dr-plan @_claude/plans/draft/001-plan.md [changes]`
+3. File must exist before refinement
+
+### Extended thinking not being used
+
+**Problem**: Output seems shallow or template-like.
+
+**Solutions**:
+1. Provide more detailed prompts (10-15 lines recommended)
+2. Include specific context about your project, constraints, and requirements
+3. Ask specific questions rather than generic requests
+
+### Git not tracking empty directories
+
+**Problem**: After cloning, `_claude/` structure is incomplete.
+
+**Explanation**: This is a git limitation. The `.gitkeep` files ensure directories are tracked. If missing:
+```bash
+/dr-init
+```
+This will recreate any missing directories and `.gitkeep` files.
+
+### CLAUDE.md was modified unexpectedly
+
+**Problem**: CLAUDE.md contents changed after running commands.
+
+**Clarification**: The plugin NEVER modifies CLAUDE.md after initial creation (State A) or user-approved append (State C). If changes occurred:
+1. Check git history to see what changed
+2. A different tool or user may have modified it
+3. The plugin only creates/modifies CLAUDE.md during `/dr-init` with user consent
+
+### Backup files appearing in plan/prd directories
+
+**Problem**: Seeing `.001-plan.md.backup` files.
+
+**Explanation**: These are automatic backups created during refinement. They're hidden (start with `.`) and contain the previous version. Safe to delete, but useful for reverting changes:
+```bash
+# To restore from backup:
+cp _claude/plans/draft/.001-plan.md.backup _claude/plans/draft/001-plan.md
+```
+
 ## Support
 
 For issues, questions, or suggestions:
