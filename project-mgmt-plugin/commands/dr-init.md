@@ -82,7 +82,7 @@ Execute these steps in order:
    - Format as YYYY-MM-DD
 
 4. **Read the CLAUDE.md template:**
-   - Read from plugin: `templates/CLAUDE-template.md`
+   - Read from plugin: `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE-template.md`
 
 5. **Replace placeholders in template:**
    - Replace `{{CURRENT_DATE}}` with actual current date from system
@@ -206,7 +206,7 @@ Execute these steps:
 
    c. Get current date from system
 
-   d. Read plugin template from `templates/CLAUDE-template.md`
+   d. Read plugin template from `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE-template.md`
 
    e. Replace `{{CURRENT_DATE}}` with actual date
 
@@ -254,7 +254,7 @@ Execute these steps:
 
    b. Get current date from system
 
-   c. Read plugin template from `templates/CLAUDE-template.md`
+   c. Read plugin template from `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE-template.md`
 
    d. Replace `{{CURRENT_DATE}}` with actual date
 
@@ -308,10 +308,10 @@ Execute these steps:
 
 ### Plugin Template Location
 
-The template is located relative to the plugin root:
-- `templates/CLAUDE-template.md`
+The template path uses the plugin root environment variable:
+- `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE-template.md`
 
-Use the Read tool to access it.
+Use the Read tool to access it with the full path.
 
 ## Execute Now
 

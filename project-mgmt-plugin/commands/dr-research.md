@@ -112,7 +112,7 @@ You are executing the `/dr-research` command to conduct deep research and create
    4. [Additional key takeaways as needed]
    ```
 
-   **findings.md** - Use the research-findings-template.md as a guide:
+   **findings.md** - Use `${CLAUDE_PLUGIN_ROOT}/templates/research-findings-template.md` as a guide:
 
    - Comprehensive analysis of the topic
    - Technical details and explanations
@@ -121,7 +121,7 @@ You are executing the `/dr-research` command to conduct deep research and create
    - Common pitfalls and challenges
    - Code examples or diagrams where relevant
 
-   **resources.md** - Use the research-resources-template.md as a guide:
+   **resources.md** - Use `${CLAUDE_PLUGIN_ROOT}/templates/research-resources-template.md` as a guide:
 
    - Links to documentation
    - Articles and blog posts
@@ -130,7 +130,7 @@ You are executing the `/dr-research` command to conduct deep research and create
    - Community resources
    - Each resource with brief annotation explaining its value
 
-   **recommendations.md** - Use the research-recommendations-template.md as a guide:
+   **recommendations.md** - Use `${CLAUDE_PLUGIN_ROOT}/templates/research-recommendations-template.md` as a guide:
 
    - Actionable next steps
    - Recommended approaches
@@ -179,7 +179,7 @@ You are executing the `/dr-research` command to conduct deep research and create
 4. **Create multiple files** - Don't put everything in one file; organize logically
 5. **Add cross-references** - Link between files for easy navigation
 6. **Provide value** - Make the research actionable and useful, not just informational
-7. **Use templates as guides** - The research templates in the plugin provide structure
+7. **Use templates as guides** - Read templates from `${CLAUDE_PLUGIN_ROOT}/templates/` for structure
 
 ## Execute Now
 
