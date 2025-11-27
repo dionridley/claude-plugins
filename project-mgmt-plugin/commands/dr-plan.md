@@ -158,7 +158,7 @@ You are executing the `/dr-plan` command in dual-mode: CREATE or REFINE.
 ### Phase 5: Create Plan
 
 1. **Read plan template:**
-   - Use the plan-template.md from the plugin templates
+   - Read from plugin: `${CLAUDE_PLUGIN_ROOT}/templates/plan-template.md`
 
 2. **Determine file path:**
    - Folder: `_claude/plans/draft/` (default) or `_claude/plans/in_progress/` (if --in-progress flag)

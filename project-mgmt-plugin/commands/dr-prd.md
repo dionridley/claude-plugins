@@ -64,7 +64,7 @@ You are executing the `/dr-prd` command in dual-mode: CREATE or REFINE.
 ### Phase 3: Create PRD
 
 1. **Read PRD template:**
-   - Use the prd-template.md from the plugin templates
+   - Read from plugin: `${CLAUDE_PLUGIN_ROOT}/templates/prd-template.md`
 
 2. **Create PRD file:**
    - Path: `_claude/prd/[feature-slug].md`
