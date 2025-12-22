@@ -5,6 +5,22 @@ All notable changes to the Project Management Plugin will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2025-12-22
+
+### Changed
+
+- **Replaced bash find/grep with Glob tool** in `/dr-plan` and `/dr-move-plan` commands
+  - Plan number scanning now uses native `Glob` tool instead of `find | grep`
+  - Plan search operations use `Glob` with filtering in Claude's reasoning
+  - Eliminates user approval prompts for file search operations
+  - Faster execution by using Claude's native file matching capabilities
+
+### Fixed
+
+- **Reduced permission prompts** - Users no longer need to approve bash commands for routine plan searches
+  - `/dr-plan` CREATE mode: No longer prompts for `find` command when determining next plan number
+  - `/dr-move-plan`: No longer prompts for `find` or `ls` commands when searching for plans
+
 ## [1.0.3] - 2025-12-21
 
 ### Added
