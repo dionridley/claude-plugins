@@ -5,6 +5,29 @@ All notable changes to the Project Management Plugin will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2025-12-21
+
+### Added
+
+- **SUMMARY mode** for `/dr-plan` - Generate GitHub-ready PR descriptions from plans
+  - Creative formatting with tables, emojis, mermaid diagrams, and collapsible sections
+  - Copyable markdown output wrapped in code fence (using tildes for nested code blocks)
+  - Usage: `/dr-plan @plan-file.md summary`
+
+- **QUESTION RESOLUTION mode** for `/dr-plan` - Interactive Q&A for plan refinement
+  - Guides users through resolving uncertain assumptions and open questions
+  - Prioritizes blocking questions marked `[AWAITING]`
+  - Updates plan file with decisions marked `[DECIDED: date]`
+  - Creates backup before making changes
+  - Usage: `/dr-plan @plan-file.md answer questions`
+
+### Changed
+
+- **Modular command architecture** - Mode-specific logic extracted to `commands/dr-plan/` subfolder
+  - `commands/dr-plan/summary.md` - SUMMARY mode instructions
+  - `commands/dr-plan/questions.md` - QUESTION RESOLUTION mode instructions
+  - Main `dr-plan.md` handles mode detection and delegates to subfolder files
+
 ## [1.0.0] - 2025-11-24
 
 ### Added
