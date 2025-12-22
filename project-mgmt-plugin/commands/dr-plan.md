@@ -1,7 +1,7 @@
 ---
 description: Create or refine a detailed implementation plan with extended thinking
 argument-hint: [implementation context OR @plan-file [refinement|summary|answer questions]] [--no-confirm|--in-progress]
-allowed-tools: Read, Write, Edit, Grep, Bash(ls:*), Bash(find:*), Bash(cp:*)
+allowed-tools: Read, Write, Edit, Grep, Glob, Bash(ls:*), Bash(cp:*)
 ---
 
 # Create or Refine Implementation Plan
@@ -120,26 +120,31 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
 
 **CRITICAL**: Plans are numbered sequentially across ALL folders. You MUST scan all three folders to find the highest number.
 
-1. **Scan ALL plan folders:**
+1. **Scan ALL plan folders using Glob:**
    ```
-   Use Bash tool:
-   find _claude/plans/ -name "*.md" -type f 2>/dev/null | grep -E "/[0-9]+-.*\.md$" || echo "No plans found"
+   Use Glob tool with pattern: _claude/plans/**/*.md
    ```
+   This returns all markdown files in draft/, in_progress/, and completed/ folders.
 
-2. **Parse all filenames to extract numbers:**
+2. **Filter results for numbered plans:**
+   - From the Glob results, identify files matching the pattern `XXX-*.md` (where XXX is digits)
+   - Filter in your analysis to only consider files like `001-auth.md`, `042-migration.md`, etc.
+   - Ignore any `.md` files that don't start with a number prefix
+
+3. **Parse all filenames to extract numbers:**
    - Look for pattern: `XXX-[name].md` where XXX is the number
    - Examples: `001-auth.md`, `042-migration.md`, `1000-large-feature.md`
    - Extract all numbers from ALL folders (draft/, in_progress/, completed/)
    - Handle both 3-digit (001-999) and 4+ digit (1000+) numbers
 
-3. **Determine next plan number:**
+4. **Determine next plan number:**
    - Find the highest number across ALL folders
    - Increment by 1
    - If no plans exist anywhere: Start at 001
    - Format with leading zeros if ≤999: `001`, `042`, `999`
    - Format without leading zeros if >999: `1000`, `1001`
 
-4. **Example scenarios:**
+5. **Example scenarios:**
    - All folders empty → Next number: `001`
    - completed/ has 001-050, in_progress/ has 051-052 → Next number: `053`
    - Only draft/ has 001-003 → Next number: `004`

@@ -1,7 +1,7 @@
 ---
 description: Move a plan between draft, in_progress, and completed
 argument-hint: [plan-name-or-number-or-@file] [draft|in-progress|completed]
-allowed-tools: Bash(mv:*), Bash(ls:*), Bash(find:*), Read, AskUserQuestion
+allowed-tools: Bash(mv:*), Glob, Read, AskUserQuestion
 ---
 
 # Move Plan Between Stages
@@ -60,15 +60,13 @@ The command receives TWO arguments:
 #### Case B: Plan Number (digits only, e.g., `001`, `42`)
 
 1. Normalize the number (keep leading zeros for matching)
-2. Search all three folders for files starting with that number:
-   ```bash
-   ls -la _claude/plans/draft/ _claude/plans/in_progress/ _claude/plans/completed/ 2>/dev/null | grep -E "^-.*[0-9]+-"
+2. Search all three folders for plan files using Glob:
    ```
-   Or use find:
-   ```bash
-   find _claude/plans -name "*.md" -type f 2>/dev/null
+   Use Glob tool with pattern: _claude/plans/**/*.md
    ```
-3. Match files where the number prefix matches (e.g., `001` matches `001-auth.md` but not `0011-foo.md`)
+3. Filter the results to find files matching the plan number:
+   - From Glob results, identify files matching pattern `XXX-*.md` where XXX starts with the search number
+   - Match files where the number prefix matches exactly (e.g., `001` matches `001-auth.md` but not `0011-foo.md`)
 4. Handle results:
    - **No matches**: Go to "Handle No Matches" section
    - **One match**: Proceed to Phase 3
@@ -76,11 +74,13 @@ The command receives TWO arguments:
 
 #### Case C: Plan Name/Slug (contains letters)
 
-1. Search all three folders for files containing the name:
-   ```bash
-   find _claude/plans -name "*[name]*" -type f 2>/dev/null
+1. Search all three folders for plan files using Glob:
    ```
-2. Match files where the slug portion contains the search term (case-insensitive if possible)
+   Use Glob tool with pattern: _claude/plans/**/*.md
+   ```
+2. Filter the results to find files containing the search term:
+   - From Glob results, identify files where the slug portion contains the search term
+   - Match case-insensitively where possible
 3. Handle results:
    - **No matches**: Go to "Handle No Matches" section
    - **One match**: Proceed to Phase 3
@@ -90,10 +90,11 @@ The command receives TWO arguments:
 
 If no plan files match the search term:
 
-1. List all available plans:
-   ```bash
-   ls _claude/plans/draft/ _claude/plans/in_progress/ _claude/plans/completed/ 2>/dev/null
+1. List all available plans using Glob:
    ```
+   Use Glob tool with pattern: _claude/plans/**/*.md
+   ```
+   Group the results by folder (draft/, in_progress/, completed/) for display.
 
 2. Show error message:
    ```
