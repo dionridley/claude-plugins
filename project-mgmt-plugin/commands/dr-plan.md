@@ -1,6 +1,6 @@
 ---
 description: Create or refine a detailed implementation plan with extended thinking
-argument-hint: [implementation context OR @plan-file [refinement request]] [--no-confirm|--in-progress]
+argument-hint: [implementation context OR @plan-file [refinement|summary|answer questions]] [--no-confirm|--in-progress]
 allowed-tools: Read, Write, Edit, Grep, Bash(ls:*), Bash(find:*), Bash(cp:*)
 ---
 
@@ -10,21 +10,65 @@ This command creates a comprehensive implementation plan OR refines an existing 
 
 ## Instructions for Claude
 
-You are executing the `/dr-plan` command in dual-mode: CREATE or REFINE.
+You are executing the `/dr-plan` command in multi-mode: CREATE, REFINE, SUMMARY, or QUESTION RESOLUTION.
 
 ### Mode Detection
 
 **CRITICAL**: The command arguments are provided in the `<command-args>` tag at the top of this message.
 
 1. **Check the `<command-args>` value:**
-   - If it contains `@_claude/plans/` AND contains "answer questions" or "resolve questions":
+   - If it contains "summary" (with a plan file reference via `@`):
+     → **SUMMARY mode** (jump to "SUMMARY Mode" section below)
+   - If it contains "answer questions" or "resolve questions" (with a plan file reference via `@`):
      → **QUESTION RESOLUTION mode** (jump to "Question Resolution Mode" section)
-   - If it contains `@_claude/plans/` (but not question keywords):
+   - If it contains a plan file reference via `@` (but no special keywords):
      → **REFINE mode** (jump to "REFINE Mode" section below)
-   - If it does NOT contain `@_claude/plans/`:
+   - If it does NOT contain a plan file reference:
      → **CREATE mode** (continue with steps below)
    - If it is empty or contains only whitespace:
      → **CREATE mode** with interactive prompt
+
+**Note**: When a user uses `@file.md`, the file content is auto-expanded into the conversation context. The `<command-args>` tag will contain any text AFTER the `@` reference (like "summary", "answer questions", etc.).
+
+---
+
+## SUMMARY MODE: Generate PR Summary
+
+This mode generates a Pull Request summary from the plan content.
+
+**Trigger**: `/dr-plan @_claude/plans/.../plan-file.md summary`
+
+### Instructions
+
+1. **Read the summary instructions file:**
+   - Read: `${CLAUDE_PLUGIN_ROOT}/commands/dr-plan/summary.md`
+
+2. **Apply those instructions:**
+   - The plan content is already available in the conversation (auto-expanded via `@`)
+   - Follow the instructions in summary.md to generate the PR summary
+   - Display the formatted output as specified
+
+3. **Do NOT proceed to other modes** - STOP after completing the summary
+
+---
+
+## QUESTION RESOLUTION MODE: Answer Plan Questions
+
+This mode helps resolve uncertain assumptions and open questions in a plan through interactive Q&A.
+
+**Trigger**: `/dr-plan @_claude/plans/.../plan-file.md answer questions`
+
+### Instructions
+
+1. **Read the questions instructions file:**
+   - Read: `${CLAUDE_PLUGIN_ROOT}/commands/dr-plan/questions.md`
+
+2. **Apply those instructions:**
+   - The plan content is already available in the conversation (auto-expanded via `@`)
+   - Follow the instructions in questions.md to guide the user through resolution
+   - Update the plan file with resolved decisions
+
+3. **Do NOT proceed to other modes** - STOP after completing question resolution
 
 ---
 
@@ -605,221 +649,6 @@ You are executing the `/dr-plan` command in dual-mode: CREATE or REFINE.
 
 ---
 
-## QUESTION RESOLUTION MODE: Answer Plan Questions Interactively
-
-This mode helps resolve uncertain assumptions and open questions in an existing plan through interactive Q&A.
-
-### Phase 1: Parse Arguments
-
-**IMPORTANT**: Look at the top of this message for the `<command-args>` tag that contains the actual arguments.
-
-1. **Extract the plan file reference from the `<command-args>` tag value:**
-   - File reference: Everything starting with `@_claude/plans/` until next space
-     - Example: `@_claude/plans/draft/001-auth-system.md`
-   - The rest of the arguments should contain "answer questions" or "resolve questions"
-
-2. **Parse the file path:**
-   - Remove the `@` prefix
-   - Convert backslashes to forward slashes if needed (Windows paths)
-   - Store full path for later use
-
-### Phase 2: Read and Parse Plan
-
-1. **Read the plan file completely**
-
-2. **If file doesn't exist:**
-   ```
-   ❌ Plan file not found: [path]
-
-   Usage: /dr-plan @_claude/plans/[folder]/[number]-[name].md answer questions
-   ```
-   - STOP - do not proceed
-
-3. **Extract plan metadata:**
-   - Plan name from the title
-   - Status (Draft/In Progress/Completed)
-   - Created date
-
-### Phase 3: Extract Unresolved Items
-
-1. **Find uncertain assumptions:**
-   - Search for `- [ ]` items in the "Assumptions Made" section
-   - Especially those marked with `[?]`
-   - These are assumptions that need verification
-
-2. **Find blocking questions:**
-   - Search for `[AWAITING]` status in "Open Questions & Decisions" section
-   - These MUST be resolved before implementation
-
-3. **Find non-blocking questions:**
-   - Search for `[OPEN]` status in "Open Questions & Decisions" section
-   - These can be resolved but don't block progress
-
-4. **Categorize and count:**
-   - Count uncertain assumptions
-   - Count blocking questions
-   - Count non-blocking questions
-   - Total unresolved items
-
-5. **If no unresolved items found:**
-   ```
-   ✅ No unresolved questions
-
-   Plan #[number]: [Plan Name]
-   Status: [Status]
-
-   All assumptions are confirmed and all questions have been resolved.
-   This plan is ready for implementation.
-
-   Next steps:
-     [If in draft/:] Move to in_progress: /dr-move-plan [number] in-progress
-     [If in in_progress/:] Begin implementation following the phases
-   ```
-   - STOP - nothing to resolve
-
-### Phase 4: Show Summary and Start Resolution
-
-1. **Show summary of items to resolve:**
-   ```
-   📋 Plan Questions to Resolve
-
-   Plan #[number]: [Plan Name]
-   Status: [Status]
-
-   Found [N] items needing resolution:
-
-   Uncertain Assumptions ([count]):
-     1. [assumption text] [?]
-     2. [assumption text] [?]
-
-   Blocking Questions ([count]) ⚠️  Must resolve before implementation:
-     1. **[Topic]**: [question]
-     2. **[Topic]**: [question]
-
-   Non-Blocking Questions ([count]):
-     1. **[Topic]**: [question]
-
-   Starting interactive resolution...
-   ```
-
-### Phase 5: Resolve Blocking Questions First
-
-**CRITICAL**: Blocking questions must be resolved before implementation can begin.
-
-1. **For each blocking question (in order):**
-
-   a. **Use AskUserQuestion tool:**
-      - Question: The actual question from the plan
-      - Header: The topic/title (max 12 chars)
-      - Options: Extract from the plan's "Option A", "Option B" etc.
-        - If no options in plan, create sensible options based on the question
-        - Always include at least 2 options
-      - multiSelect: false (decisions should be singular)
-
-   b. **Wait for user response**
-
-   c. **Document the decision:**
-      - Mark as resolved: `- [x] **[Topic]** [DECIDED: YYYY-MM-DD]`
-      - Add Decision line with what was chosen
-      - Add Rationale based on user's explanation or the option description
-
-2. **After all blocking questions resolved:**
-   ```
-   ✅ All blocking questions resolved ([count]/[count])
-
-   Continuing to optional items...
-   ```
-
-### Phase 6: Offer to Resolve Non-Blocking Items
-
-1. **Ask if user wants to resolve uncertain assumptions:**
-   - If there are uncertain assumptions, ask:
-   ```
-   Would you like to verify uncertain assumptions? ([count] remaining)
-   ```
-   - Use AskUserQuestion with options:
-     - "Yes, verify all"
-     - "Skip for now"
-
-2. **If user chooses to verify:**
-   - For each uncertain assumption, ask:
-     - "Is this assumption correct: [assumption text]?"
-     - Options: "Yes, correct" / "No, needs change" / "Skip"
-   - If correct: Mark as `[x]`
-   - If needs change: Ask what the correct assumption should be, update text
-   - If skip: Leave as is
-
-3. **Ask if user wants to resolve non-blocking questions:**
-   - If there are non-blocking questions, ask:
-   ```
-   Would you like to resolve non-blocking questions? ([count] remaining)
-   ```
-   - Use AskUserQuestion with options:
-     - "Yes, resolve all"
-     - "Skip for now"
-
-4. **If user chooses to resolve:**
-   - Follow same process as Phase 5 for each question
-   - Mark as `[DECIDED: YYYY-MM-DD]` when resolved
-
-### Phase 7: Update Plan File
-
-1. **Create backup first:**
-   - Copy current plan to `.{filename}.backup` in same directory
-
-2. **Apply all updates:**
-   - Update each resolved assumption (change `[ ]` to `[x]`)
-   - Update each resolved question with:
-     - Checkbox: `[x]` instead of `[ ]`
-     - Status: `[DECIDED: YYYY-MM-DD]` instead of `[AWAITING]` or `[OPEN]`
-     - Add `> **Decision:** [chosen option]`
-     - Add `> **Rationale:** [brief explanation]`
-
-3. **Add to Refinement History:**
-   ```markdown
-   - [YYYY-MM-DD]: Resolved [N] questions via interactive Q&A
-   ```
-
-4. **Update Refinements count in metadata**
-
-### Phase 8: Confirm Success
-
-1. **Show completion summary:**
-   ```
-   ✅ Questions resolved successfully
-
-   Plan #[number]: [Plan Name]
-   Location: _claude/plans/[folder]/[filename].md
-
-   Resolution Summary:
-     - Assumptions verified: [X] of [Y]
-     - Blocking questions resolved: [X] of [Y] ✓
-     - Non-blocking questions resolved: [X] of [Y]
-
-   [If all blocking resolved:]
-   ✓ All blocking questions resolved - ready for implementation
-
-   [If some items skipped:]
-   ℹ️  [N] items skipped - can resolve later with:
-     /dr-plan @_claude/plans/[folder]/[filename].md answer questions
-
-   Decisions made:
-     - **[Topic 1]**: [Brief decision]
-     - **[Topic 2]**: [Brief decision]
-
-   Backup saved: _claude/plans/[folder]/.[filename].backup
-
-   Next steps:
-     [If in draft/ and all blocking resolved:]
-     1. Move to in_progress: /dr-move-plan [number] in-progress
-     [If in in_progress/:]
-     1. Continue implementation following the phases
-     [If items remain:]
-     1. Resolve remaining items later: /dr-plan @plan answer questions
-   ```
-
----
-
 ## Important Notes
 
 1. **Always check system date/time** - Never use hardcoded dates
@@ -833,41 +662,6 @@ This mode helps resolve uncertain assumptions and open questions in an existing 
 9. **Maintain history** - Always update Refinement History section
 10. **Confirm before changing** - Unless --no-confirm flag is present
 
-### Checkbox and Status Conventions
-
-**Assumption Markers:**
-- `[x]` - Confirmed assumption (verified from codebase, PRD, or user)
-- `[ ]` - Unverified assumption
-- `[?]` - Uncertain assumption that needs verification (placed after the assumption text)
-
-**Question Status Labels:**
-- `[AWAITING]` - Blocking question waiting for user decision
-- `[OPEN]` - Non-blocking question that can be resolved during implementation
-- `[DECIDED: YYYY-MM-DD]` - Question resolved with date recorded
-
-**Resolved Question Format:**
-```markdown
-- [x] **[Topic]** [DECIDED: YYYY-MM-DD]
-  [Original question text]
-  > **Decision:** [What was decided]
-  > **Rationale:** [Why this decision was made]
-```
-
-**Example Lifecycle:**
-```markdown
-# Before resolution:
-- [ ] **Auth Method** [AWAITING]
-  Which authentication method should we use?
-  - Option A: JWT tokens
-  - Option B: Session cookies
-
-# After resolution:
-- [x] **Auth Method** [DECIDED: 2025-01-15]
-  Which authentication method should we use?
-  > **Decision:** JWT tokens
-  > **Rationale:** Better for API-first design and mobile app support
-```
-
 ## Execute Now
 
-Follow the instructions above based on the detected mode (CREATE, REFINE, or QUESTION RESOLUTION).
+Follow the instructions above based on the detected mode (CREATE, REFINE, SUMMARY, or QUESTION RESOLUTION).

@@ -187,7 +187,7 @@ Need templates for common notification types and A/B testing capability.
 
 ### `/dr-plan`
 
-Creates detailed implementation plan OR refines existing plan using extended thinking. Supports dual-mode operation.
+Creates detailed implementation plan OR refines existing plan using extended thinking. Supports multi-mode operation.
 
 **CREATE Mode - Usage:**
 ```bash
@@ -219,6 +219,16 @@ Creates detailed implementation plan OR refines existing plan using extended thi
 /dr-plan @plan-file [refinement request] --no-confirm
 ```
 
+**SUMMARY Mode - Generate PR Summary:**
+```bash
+/dr-plan @plan-file summary
+```
+
+**QUESTION RESOLUTION Mode - Answer Plan Questions:**
+```bash
+/dr-plan @plan-file answer questions
+```
+
 **CREATE Example:**
 ```bash
 /dr-plan Implement real-time notification system as specified in PRD.
@@ -244,6 +254,24 @@ Must support 10k concurrent WebSocket connections initially.
 
 # Skip confirmation for quick updates
 /dr-plan @_claude/plans/draft/002-api.md Fix typo in Phase 2 tasks --no-confirm
+```
+
+**SUMMARY Examples:**
+```bash
+# Generate PR summary for a completed plan
+/dr-plan @_claude/plans/completed/001-authentication-system.md summary
+
+# Generate PR summary for in-progress work
+/dr-plan @_claude/plans/in_progress/003-database-migration.md summary
+```
+
+**QUESTION RESOLUTION Examples:**
+```bash
+# Resolve open questions in a draft plan
+/dr-plan @_claude/plans/draft/001-authentication-system.md answer questions
+
+# Can also use "resolve questions"
+/dr-plan @_claude/plans/draft/002-api.md resolve questions
 ```
 
 **CREATE Mode - What it does:**
@@ -275,6 +303,19 @@ Must support 10k concurrent WebSocket connections initially.
   - **Completed plans**: Refuses to modify (historical records)
 - **Preserves metadata**: Keeps plan number, slug, and core structure
 - **Adds refinement note**: Documents when and why plan was refined
+
+**SUMMARY Mode - What it does:**
+- **Generates PR summary**: Creates a GitHub-ready Pull Request description from the plan
+- **Creative formatting**: Uses tables, emojis, mermaid diagrams, and collapsible sections as appropriate
+- **Copyable output**: Wraps output in a code fence so you can copy the raw markdown
+- **Comprehensive content**: Includes summary, changes, test plan, and notes for reviewers
+
+**QUESTION RESOLUTION Mode - What it does:**
+- **Interactive Q&A**: Guides you through resolving uncertain assumptions and open questions
+- **Prioritizes blocking questions**: Resolves questions marked `[AWAITING]` first
+- **Updates plan file**: Marks resolved questions with `[DECIDED: date]` and documents decisions
+- **Creates backup**: Saves plan backup before making changes
+- **Tracks progress**: Shows summary of resolved vs. remaining items
 
 **Plan Numbering:**
 - Plans are numbered sequentially: 001, 002, 003, ..., 999, 1000, ...
@@ -402,7 +443,15 @@ your-project/
    - Small adjustments only (dependencies, clarifications)
    - Major changes should move plan back to draft first
 
-7. **Completion Phase**
+7. **PR Summary** (before or after completion)
+   ```bash
+   /dr-plan @_claude/plans/in_progress/[plan-file].md summary
+   ```
+   - Generates GitHub-ready PR description
+   - Includes summary, changes, test plan, and notes
+   - Output is copyable markdown
+
+8. **Completion Phase**
    ```bash
    /dr-move-plan [plan-name] completed
    ```
@@ -501,6 +550,8 @@ then switch over production traffic with blue-green deployment strategy.
 5. **Partial Name Matching**: `/dr-move-plan auth in-progress` will find "authentication-system"
 6. **Git Tracking**: All documentation is markdown - commit plans and PRDs to version control
 7. **Idempotent Init**: Safe to run `/dr-init` multiple times - it won't duplicate files
+8. **PR Summaries**: Use `/dr-plan @plan.md summary` to generate copy-paste ready PR descriptions
+9. **Resolve Questions Early**: Use `/dr-plan @plan.md answer questions` to resolve blocking questions before implementation
 
 ## Contributing
 
@@ -514,17 +565,9 @@ Contributions welcome! Please:
 
 MIT License - see LICENSE file for details
 
-## Version History
+## Changelog
 
-- **1.0.0** - Initial release
-  - Five core commands: init, research, prd, plan, move-plan
-  - Dual-mode commands for PRDs and plans (create or refine)
-  - Sequential plan numbering
-  - Iterative refinement with extended thinking
-  - PRD-plan linking via file references
-  - Extended thinking integration
-  - Language-agnostic design
-  - Automatic backups and safety confirmations
+See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 
 ## Troubleshooting
 
