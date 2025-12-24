@@ -5,6 +5,17 @@ All notable changes to the Project Management Plugin will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.5] - 2025-12-23
+
+### Added
+
+- **Branch commit message generation** in `/dr-plan summary` mode
+  - Generates a copyable commit message alongside the PR summary
+  - Includes a short imperative title (3-6 words) and up to 5 bullet points
+  - Format uses `*` prefix for bullets, past tense for completed actions
+  - Displayed in separate code fence for easy copying
+  - Useful for squash/merge commits when closing PRs
+
 ## [1.0.4] - 2025-12-22
 
 ### Changed
