@@ -111,13 +111,66 @@ The plan content is available in the conversation context (expanded via `@` refe
    - ALL content must be inside - headers, lists, tables, code blocks, EVERYTHING
    - The user will see `##`, `**`, `-`, ``` characters literally, which is what they need to copy
 
-3. After the code fence closes, show the tips:
+### Step 4: Generate Branch Commit Message
+
+After displaying the PR summary, generate a commit message for the entire branch that summarizes all changes being merged.
+
+1. **Analyze the plan to create the commit message:**
+   - **Title**: A short, imperative phrase summarizing the overall work (3-6 words)
+   - **Bullets**: Up to 5 specific changes/accomplishments from the implementation
+
+2. **Commit message format rules:**
+   - Title: Imperative mood, no period (e.g., "Add user authentication", "Fix event loading")
+   - Bullets: Use `*` prefix, past tense, specific actions completed
+   - Maximum 5 bullet points - prioritize the most significant changes
+   - No periods at end of bullets
+   - Each bullet should be a complete, standalone description
+
+3. **Display the commit message section:**
+
+   ```
+   ─────────────────────────────────────────────
+   📝 COPY THE COMMIT MESSAGE BELOW
+   ─────────────────────────────────────────────
+   ```
+
+   Then output the commit message in a plain code fence:
+
+   ````
+   ~~~
+   <Commit Message Title>
+   * <Item 1 message>
+   * <Item 2 message>
+   * <Item 3 message>
+   ~~~
+   ````
+
+**Commit Message Examples:**
+
+Title examples:
+- "Add tools for testing"
+- "Create, Edit and Delete Event functionality added"
+- "Frontend app cleanup"
+- "Set up account pages"
+- "Stripe webhook fixes"
+- "Design exploration"
+
+Bullet examples:
+- "Research on Apollo Client v4 and Codegen monorepo strategy"
+- "Update dockerfile to support new elixir image"
+- "Fixed eventBySlug call to properly only need slug"
+- "Documented Ash framework learnings and made them part of claude.md"
+- "Created database migrations for Users, Events and UserEvents"
+
+### Step 5: Show Tips
+
+After both code fences, show the tips:
    ```
    ─────────────────────────────────────────────
 
    Tips:
-     - Copy the content inside the code block above
-     - Paste directly into GitHub's PR description
+     - Copy the PR summary content and paste into GitHub's PR description
+     - Copy the commit message for your merge/squash commit
 
    Related commands:
      - Refine plan: /dr-plan @[plan-file] [changes]
@@ -197,4 +250,6 @@ Major refactor of the data layer.
 
 Generate a creative and effective PR summary from the plan content in the conversation context.
 
-**REMINDER**: Output the PR summary inside a `~~~markdown` code fence (using TILDES) so the user sees raw markdown syntax they can copy. This allows backtick code blocks inside.
+**REMINDERS**:
+- Output the PR summary inside a `~~~markdown` code fence (using TILDES) so the user sees raw markdown syntax they can copy. This allows backtick code blocks inside.
+- After the PR summary, generate a branch commit message in a separate `~~~` code fence with a title and up to 5 bullet points.
