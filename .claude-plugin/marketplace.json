@@ -10,6 +10,12 @@
       "source": "./project-mgmt-plugin",
       "description": "Structured project management with research, PRDs, and implementation plans",
       "version": "1.0.5"
+    },
+    {
+      "name": "engineering-tools",
+      "source": "./engineering-tools",
+      "description": "Skills and commands to assist with software engineering and coding tasks",
+      "version": "0.1.0"
     }
   ]
 }
