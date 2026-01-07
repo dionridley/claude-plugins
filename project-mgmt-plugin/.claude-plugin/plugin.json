@@ -1,6 +1,6 @@
 {
   "name": "project-management",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "description": "Structured project management with research, PRDs, and implementation plans",
   "author": {
     "name": "Dion Ridley",
@@ -22,5 +22,5 @@
     "./commands/dr-summary.md",
     "./commands/dr-move-plan.md"
   ],
-  "skills": ["./skills/frontend-design"]
+  "skills": []
 }

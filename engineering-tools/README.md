@@ -18,7 +18,26 @@ claude mcp add-plugin https://github.com/dionridley/claude-plugins engineering-t
 
 ### Skills
 
-*No skills yet - add skill directories to `skills/` folder*
+#### frontend-design
+
+Creates distinctive, production-grade frontend interfaces with high design quality. This skill is automatically triggered when you ask Claude to build:
+
+- Web components or pages
+- Landing pages or dashboards
+- React/Vue/HTML components
+- UI styling or beautification
+
+**Key features:**
+- Bold aesthetic direction (minimalist, maximalist, retro-futuristic, etc.)
+- Production-grade, functional code
+- Distinctive typography and color choices
+- Motion and micro-interactions
+- Avoids generic "AI slop" aesthetics
+
+**Example prompts:**
+- "Build me a landing page for a coffee subscription service"
+- "Create a dashboard for monitoring server health"
+- "Design a React component for a pricing table"
 
 ## Development
 
