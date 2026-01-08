@@ -15,7 +15,7 @@
       "name": "engineering-tools",
       "source": "./engineering-tools",
       "description": "Skills and commands to assist with software engineering and coding tasks",
-      "version": "0.2.0"
+      "version": "0.3.0"
     }
   ]
 }
