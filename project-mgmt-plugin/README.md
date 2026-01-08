@@ -77,12 +77,9 @@ A structured project management system for Claude Code that provides organized w
 
 6. **Move plan to in-progress** when ready to implement:
    ```bash
-   /dr-move-plan 001 in-progress
+   mv _claude/plans/draft/001-authentication-system.md _claude/plans/in_progress/
    ```
-   or
-   ```bash
-   /dr-move-plan authentication in-progress
-   ```
+   Or simply ask Claude to move it - Claude will handle the move automatically when appropriate.
 
 ## Commands
 
@@ -322,48 +319,17 @@ Must support 10k concurrent WebSocket connections initially.
 - Numbers are preserved when moving between folders
 - Finds highest number across ALL folders (handles case where all plans are in completed/)
 
-### `/dr-move-plan`
+## Moving Plans Between Stages
 
-Moves a plan between draft, in_progress, and completed folders while preserving the plan number.
+Plans can be moved between `draft/`, `in_progress/`, and `completed/` folders using:
 
-**Usage:**
-```bash
-/dr-move-plan [plan-name-or-number-or-@file] [draft|in-progress|completed]
-```
+1. **Manual `mv` command:**
+   ```bash
+   mv _claude/plans/draft/001-plan-name.md _claude/plans/in_progress/
+   mv _claude/plans/in_progress/001-plan-name.md _claude/plans/completed/
+   ```
 
-**Examples:**
-```bash
-# Move by plan number
-/dr-move-plan 001 in-progress
-
-# Move by partial name match
-/dr-move-plan authentication in-progress
-
-# Move using file reference (exact specification)
-/dr-move-plan @_claude/plans/draft/001-authentication-system.md in-progress
-```
-
-**What it does:**
-- **By number**: Finds plan with that number (e.g., "001")
-- **By name**: Searches for plans containing that text (e.g., "auth" matches "authentication-system")
-- **By file reference**: Uses exact file path via `@path` syntax (works with autocomplete)
-- **Handles ambiguity**: If multiple plans match, lists all options and asks user to clarify
-- **Helpful errors**: If no match found, shows all available plans
-- Preserves plan number when moving
-- Shows clear confirmation with plan number, name, and both locations
-
-**Ambiguity handling:**
-If you type `/dr-move-plan auth in-progress` and multiple plans match:
-```
-Multiple plans found matching "auth":
-  1. 001-authentication-system.md (in draft/)
-  2. 015-oauth-integration.md (in completed/)
-
-Which plan did you mean? Please specify by:
-  - Plan number: /dr-move-plan 001 in-progress
-  - More specific name: /dr-move-plan authentication-system in-progress
-  - File reference: /dr-move-plan @_claude/plans/draft/001-authentication-system.md in-progress
-```
+2. **Ask Claude:** Simply tell Claude to move a plan and it will handle it automatically (e.g., "move plan 001 to in-progress").
 
 ## Directory Structure
 
@@ -430,8 +396,9 @@ your-project/
 
 5. **Implementation Phase**
    ```bash
-   /dr-move-plan [plan-name] in-progress
+   mv _claude/plans/draft/[plan-file].md _claude/plans/in_progress/
    ```
+   Or ask Claude to move the plan for you.
    - Moves plan to `in_progress/`
    - Now ready to implement
    - **IMPORTANT**: Only implement plans in `in_progress/`!
@@ -453,8 +420,9 @@ your-project/
 
 8. **Completion Phase**
    ```bash
-   /dr-move-plan [plan-name] completed
+   mv _claude/plans/in_progress/[plan-file].md _claude/plans/completed/
    ```
+   Or ask Claude to move the plan to completed.
    - Archives completed plan
    - Documents lessons learned
    - Updates success metrics
@@ -518,11 +486,11 @@ Have 4 weeks for initial release with basic features.
 # Review and refine if needed
 /dr-plan @_claude/plans/draft/001-realtime-chat.md Add detailed error handling strategy and enhance security phase
 
-# Start implementation
-/dr-move-plan realtime-chat in-progress
+# Start implementation (move to in_progress)
+mv _claude/plans/draft/001-realtime-chat.md _claude/plans/in_progress/
 
-# When done
-/dr-move-plan realtime-chat completed
+# When done (move to completed)
+mv _claude/plans/in_progress/001-realtime-chat.md _claude/plans/completed/
 ```
 
 ### Example 2: Technical Spike / Investigation
@@ -546,12 +514,11 @@ then switch over production traffic with blue-green deployment strategy.
 1. **Use Extended Thinking**: Commands automatically use extended thinking when you provide detailed prompts
 2. **Reference Files**: Use `@path/to/file` syntax to reference PRDs or other files in your prompts
 3. **Plan Numbering**: Plans auto-number sequentially - no need to manage numbers manually
-4. **File References in Move**: Use file references with autocomplete: `/dr-move-plan @_claude/plans/draft/001-plan.md in-progress`
-5. **Partial Name Matching**: `/dr-move-plan auth in-progress` will find "authentication-system"
-6. **Git Tracking**: All documentation is markdown - commit plans and PRDs to version control
-7. **Idempotent Init**: Safe to run `/dr-init` multiple times - it won't duplicate files
-8. **PR Summaries**: Use `/dr-plan @plan.md summary` to generate copy-paste ready PR descriptions
-9. **Resolve Questions Early**: Use `/dr-plan @plan.md answer questions` to resolve blocking questions before implementation
+4. **Moving Plans**: Use `mv` command or ask Claude to move plans between draft/in_progress/completed folders
+5. **Git Tracking**: All documentation is markdown - commit plans and PRDs to version control
+6. **Idempotent Init**: Safe to run `/dr-init` multiple times - it won't duplicate files
+7. **PR Summaries**: Use `/dr-plan @plan.md summary` to generate copy-paste ready PR descriptions
+8. **Resolve Questions Early**: Use `/dr-plan @plan.md answer questions` to resolve blocking questions before implementation
 
 ## Contributing
 
@@ -597,15 +564,14 @@ If folders are truly missing, the command should have created them. Try running 
 
 **Explanation**: Plan numbers are determined by scanning all three folders (draft, in_progress, completed). If a plan 003 exists anywhere, even in completed/, the next plan will be 004. This is intentional to maintain chronological ordering.
 
-### `/dr-move-plan` can't find my plan
+### Can't find a plan file to move
 
-**Problem**: Command says "no plans found" but the plan exists.
+**Problem**: Not sure where a plan file is located.
 
 **Solutions**:
-1. Use exact plan number: `/dr-move-plan 001 in-progress`
-2. Use file reference: `/dr-move-plan @_claude/plans/draft/001-plan-name.md in-progress`
-3. Check spelling - partial matches are case-sensitive
-4. Verify plan is in `_claude/plans/` directory structure
+1. List all plans: `ls _claude/plans/*/`
+2. Search by name: `ls _claude/plans/*/*.md | grep -i "auth"`
+3. Ask Claude to find and move the plan for you
 
 ### PRD or Plan refinement not working
 

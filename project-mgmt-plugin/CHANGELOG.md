@@ -5,6 +5,17 @@ All notable changes to the Project Management Plugin will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-01-07
+
+### Removed
+
+- **`/dr-move-plan` command** - Removed to reduce token usage. Plans can now be moved using standard `mv` commands or Claude will move files automatically when contextually appropriate
+- **`/dr-summary` reference** - Removed stale command reference from plugin.json (file never existed)
+
+### Changed
+
+- **Plan movement guidance** - Other commands now suggest using `mv` command directly or trusting Claude to move files automatically
+
 ## [1.1.0] - 2026-01-06
 
 ### Removed

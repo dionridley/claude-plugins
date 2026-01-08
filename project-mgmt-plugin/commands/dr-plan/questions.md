@@ -58,7 +58,9 @@ The plan content is available in the conversation context (expanded via `@` refe
    This plan is ready for implementation.
 
    Next steps:
-     [If in draft/:] Move to in_progress: /dr-move-plan [number] in-progress
+     [If in draft/:] Move to in_progress:
+        mv _claude/plans/draft/[filename].md _claude/plans/in_progress/
+        Or ask Claude to move the plan for you.
      [If in in_progress/:] Begin implementation following the phases
    ```
    - STOP - nothing to resolve
@@ -197,7 +199,9 @@ The plan content is available in the conversation context (expanded via `@` refe
 
    Next steps:
      [If in draft/ and all blocking resolved:]
-     1. Move to in_progress: /dr-move-plan [number] in-progress
+     1. Move to in_progress:
+        mv _claude/plans/draft/[filename].md _claude/plans/in_progress/
+        Or ask Claude to move the plan for you.
      [If in in_progress/:]
      1. Continue implementation following the phases
      [If items remain:]
