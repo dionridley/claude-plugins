@@ -39,6 +39,29 @@ Creates distinctive, production-grade frontend interfaces with high design quali
 - "Create a dashboard for monitoring server health"
 - "Design a React component for a pricing table"
 
+#### react-19
+
+Provides guidance on React 19.x features and APIs that may not be in LLM training data. Automatically triggered when working with:
+
+- React 19+ features and new hooks
+- Form handling with Actions
+- Server Components and Server Actions
+- New React 19 patterns and migrations
+
+**Key features:**
+- New hooks: useActionState, useFormStatus, useOptimistic, use()
+- React 19.2 additions: useEffectEvent, Activity component
+- Form Actions replacing manual submit handlers
+- Breaking changes: ref as prop, Context as provider
+- Decision tree for choosing the right API
+- Common pitfalls and migration patterns
+
+**Example prompts:**
+- "How do I handle form submissions in React 19?"
+- "What's the difference between useFormStatus and useActionState?"
+- "Show me how to use the Activity component for state preservation"
+- "How do I migrate from forwardRef to the new ref prop pattern?"
+
 ## Development
 
 ### Adding a Command
