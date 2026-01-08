@@ -328,7 +328,9 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
      [If blocking questions: 2. Answer blocking questions: /dr-plan @plan answer questions]
      [If PRD referenced: 2. Verify alignment with PRD requirements]
      3. Refine if needed: /dr-plan @_claude/plans/[folder]/[number]-[plan-slug].md [changes]
-     4. When ready to implement: /dr-move-plan [number] in-progress
+     4. When ready to implement, move to in_progress:
+        mv _claude/plans/draft/[number]-[plan-slug].md _claude/plans/in_progress/
+        Or ask Claude to move the plan for you.
      5. IMPORTANT: Only work on plans in 'in_progress' folder!
 
    [If created in draft/:]
@@ -566,7 +568,8 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
    [Show diff summary from Phase 8]
 
    Recommendations:
-     1. Move plan back to draft for major redesign: /dr-move-plan [number] draft
+     1. Move plan back to draft for major redesign:
+        mv _claude/plans/in_progress/[filename].md _claude/plans/draft/
      2. Create a new plan for the new approach: /dr-plan [new approach]
      3. Continue with minor adjustments only
 
@@ -649,7 +652,9 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
      1. Review the refined plan
      2. Refine again if needed: /dr-plan @_claude/plans/[folder]/[filename].md [changes]
      [If in draft/:]
-     3. When ready: /dr-move-plan [number] in-progress
+     3. When ready, move to in_progress:
+        mv _claude/plans/draft/[filename].md _claude/plans/in_progress/
+        Or ask Claude to move the plan for you.
    ```
 
 ---
