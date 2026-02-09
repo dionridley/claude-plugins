@@ -152,10 +152,7 @@ The plan content is available in the conversation context (expanded via `@` refe
 
 ### Phase 6: Update Plan File
 
-1. **Create backup first:**
-   - Copy current plan to `.{filename}.backup` in same directory
-
-2. **Apply all updates:**
+1. **Apply all updates:**
    - Update each resolved assumption (change `[ ]` to `[x]`)
    - Update each resolved question with:
      - Checkbox: `[x]` instead of `[ ]`
@@ -163,12 +160,12 @@ The plan content is available in the conversation context (expanded via `@` refe
      - Add `> **Decision:** [chosen option]`
      - Add `> **Rationale:** [brief explanation]`
 
-3. **Add to Refinement History:**
+2. **Add to Refinement History:**
    ```markdown
    - [YYYY-MM-DD]: Resolved [N] questions via interactive Q&A
    ```
 
-4. **Update Refinements count in metadata**
+3. **Update Refinements count in metadata**
 
 ### Phase 7: Confirm Success
 
@@ -194,8 +191,6 @@ The plan content is available in the conversation context (expanded via `@` refe
    Decisions made:
      - **[Topic 1]**: [Brief decision]
      - **[Topic 2]**: [Brief decision]
-
-   Backup saved: _claude/plans/[folder]/.[filename].backup
 
    Next steps:
      [If in draft/ and all blocking resolved:]
