@@ -1,13 +1,11 @@
-# {{PLAN_NAME}}
+# [Plan Name]
 
-**Created:** {{CURRENT_DATE}}
-**Status:** {{STATUS}}
-**Related PRD:** {{RELATED_PRD}}
-**Refinements:** {{REFINEMENT_COUNT}}
+**Created:** [YYYY-MM-DD]
+**Status:** [Draft/In Progress]
+**Related PRD:** [PRD file path or N/A]
+**Refinements:** None
 
 ## Executive Summary
-
-{{EXECUTIVE_SUMMARY}}
 
 [2-3 sentences: what is being implemented, why it matters, what problem it solves]
 

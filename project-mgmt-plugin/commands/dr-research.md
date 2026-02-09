@@ -31,9 +31,9 @@ You are executing the `/dr-research` command to conduct deep research and create
 
 ### Phase 2: Plan Research Approach
 
-1. **CRITICAL: Check current date/time**
+1. **CRITICAL: Get current date**
 
-   - Access the system environment to get the ACTUAL current date
+   - Use the current date from the conversation context (available in the system prompt)
    - Format as YYYY-MM-DD
    - NEVER use hardcoded or assumed dates
 
@@ -60,6 +60,8 @@ You are executing the `/dr-research` command to conduct deep research and create
 
 1. **Create research directory:**
 
+   If `_claude/research/` does not already exist, inform the user they should run `/dr-init` to set up the full project structure, but proceed with creating the directory anyway.
+
    ```bash
    mkdir -p _claude/research/[slug]-[date]
    ```
@@ -83,34 +85,12 @@ You are executing the `/dr-research` command to conduct deep research and create
 
 1. **Create multiple interconnected markdown files:**
 
-   **index.md** - Overview and navigation:
+   **index.md** - Use `${CLAUDE_PLUGIN_ROOT}/templates/research-index-template.md` as a guide:
 
-   ```markdown
-   # Research: [Topic Name]
-
-   **Date:** [YYYY-MM-DD from system]
-   **Research Question:** [Original research prompt or question]
-
-   ## Overview
-
-   [1-2 paragraph executive summary of what was researched and key insights discovered]
-
-   ## Structure
-
-   This research is organized into multiple documents:
-
-   - **[Findings](./findings.md)** - Core research findings and analysis
-   - **[Resources](./resources.md)** - Links, documentation, and references
-   - **[Recommendations](./recommendations.md)** - Actionable recommendations
-   - [**[Additional Topic](./additional-file.md)** - Deep dive into specific aspect (if needed)]
-
-   ## Key Takeaways
-
-   1. [Most important insight or finding]
-   2. [Second most important insight or finding]
-   3. [Third most important insight or finding]
-   4. [Additional key takeaways as needed]
-   ```
+   - Executive summary of research and key insights
+   - Navigation links to all other research files
+   - Key takeaways (top 3-5 insights)
+   - If additional deep-dive files were created, add links to them in the Structure section
 
    **findings.md** - Use `${CLAUDE_PLUGIN_ROOT}/templates/research-findings-template.md` as a guide:
 
@@ -173,7 +153,7 @@ You are executing the `/dr-research` command to conduct deep research and create
 
 ## Important Notes
 
-1. **Always check system date/time** - Never use hardcoded dates
+1. **Always use the current date from conversation context** - Never use hardcoded dates
 2. **Use extended thinking** - Take time to deeply analyze the research request before starting
 3. **Be comprehensive** - Research thoroughly and document everything important
 4. **Create multiple files** - Don't put everything in one file; organize logically

@@ -1,7 +1,7 @@
 ---
 description: Create or refine a detailed implementation plan with extended thinking
 argument-hint: [implementation context OR @plan-file [refinement|summary|answer questions]] [--no-confirm|--in-progress]
-allowed-tools: Read, Write, Edit, Grep, Glob, Bash(ls:*)
+allowed-tools: Read, Write, Edit, Grep, Glob, Bash(ls:*), Bash(mkdir:*)
 ---
 
 # Create or Refine Implementation Plan
@@ -111,8 +111,8 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
    - If present: Plan will be created in `_claude/plans/in_progress/` folder
    - If not present: Plan will be created in `_claude/plans/draft/` folder (default)
 
-3. **CRITICAL: Check current date/time**
-   - Access the system environment to get the ACTUAL current date
+3. **CRITICAL: Get current date**
+   - Use the current date from the conversation context (available in the system prompt)
    - Format as YYYY-MM-DD
    - NEVER use hardcoded or assumed dates
 
@@ -199,25 +199,28 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
    - Only if it would inform better planning
    - Don't read unnecessarily
 
-4. **Extract plan name:**
+5. **Extract plan name:**
    - Identify the main feature/task from the description
    - Create a slug (lowercase, hyphens for spaces, remove special chars)
    - Example: "Implement User Authentication System" → "implement-user-authentication-system"
 
 ### Phase 5: Create Plan
 
-1. **Read plan template:**
+1. **Ensure directory exists:**
+   - If the target folder (`_claude/plans/draft/` or `_claude/plans/in_progress/`) does not already exist, create it with `mkdir -p` and inform the user they should run `/dr-init` to set up the full project structure
+
+2. **Read plan template:**
    - Read from plugin: `${CLAUDE_PLUGIN_ROOT}/templates/plan-template.md`
 
-2. **Determine file path:**
+3. **Determine file path:**
    - Folder: `_claude/plans/draft/` (default) or `_claude/plans/in_progress/` (if --in-progress flag)
    - Filename: `[number]-[plan-slug].md`
    - Example: `_claude/plans/draft/001-implement-user-authentication-system.md`
 
-3. **Create plan file with ALL sections thoughtfully populated:**
+4. **Create plan file with ALL sections thoughtfully populated:**
 
    **Metadata:**
-   - Created: [ACTUAL current date from system]
+   - Created: [current date from conversation context]
    - Status: Draft (or "In Progress" if --in-progress flag)
    - Related PRD: [PRD file path if referenced, otherwise "N/A"]
    - Refinements: None
@@ -287,7 +290,7 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
    - Placeholder section to be filled in after implementation
    - Structure with checkboxes for final results
 
-4. **If critical information is missing:**
+5. **If critical information is missing:**
    - Ask 1-2 clarifying questions before proceeding
    - Only ask if the answer would significantly improve the plan
 
@@ -543,11 +546,9 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
    - Skip to Phase 9 immediately
    - Do not ask for confirmation
 
-2. **Otherwise, show confirmation prompt based on status:**
+2. **Otherwise, show status context and diff, then ask for confirmation:**
 
-   **If plan is In Progress AND major changes detected:**
-
-   Show this warning:
+   **If plan is In Progress AND major changes detected, display:**
    ```
    ⚠️  WARNING: This plan is in progress (may have completed tasks)
 
@@ -557,20 +558,14 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
 
    This appears to be a major structural change that could invalidate completed work.
 
-   [Show diff summary from Phase 7]
-
    Recommendations:
-     1. Move plan back to draft for major redesign:
-        mv _claude/plans/in_progress/[filename].md _claude/plans/draft/
+     1. Move plan back to draft for major redesign
+        (ask Claude to move it, or: mv _claude/plans/in_progress/[filename].md _claude/plans/draft/)
      2. Create a new plan for the new approach: /dr-plan [new approach]
      3. Continue with minor adjustments only
-
-   Proceed with major changes to in-progress plan? [y/n]:
    ```
 
-   **If plan is In Progress AND minor changes:**
-
-   Show this message:
+   **If plan is In Progress AND minor changes, display:**
    ```
    ℹ️  Note: This plan is in progress
 
@@ -578,27 +573,22 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
    Status: In Progress
 
    Some tasks may already be completed. Verify changes don't conflict with work done.
-
-   [Show diff summary from Phase 7]
-
-   Apply these changes? [y/n/diff]:
    ```
 
-   **If plan is Draft (normal case):**
+   **For all statuses (including Draft), then display:**
+   - The diff summary from Phase 7
 
-   Show diff summary:
-   ```
-   [Show diff summary from Phase 7]
+   **Then use AskUserQuestion** to ask the user what to do, with these options:
+   - **Apply** — Apply the changes to the plan
+   - **Show Diff** — Show a detailed line-by-line diff before deciding
+   - **Cancel** — Cancel refinement, no changes made
 
-   Apply these changes? [y/n/diff]:
-   ```
+3. **Handle user response:**
+   - **Apply**: Proceed to Phase 9
+   - **Show Diff**: Show detailed line-by-line comparison, then ask again with AskUserQuestion (Apply/Cancel)
+   - **Cancel**: Show cancellation message and STOP
 
-3. **Wait for user response:**
-   - **y** or **yes**: Proceed to Phase 9
-   - **n** or **no**: Cancel, show cancellation message, STOP
-   - **diff**: Show detailed line-by-line diff using a comparison, then ask again
-
-4. **If user cancels (n):**
+4. **If user cancels:**
    ```
    ❌ Refinement cancelled - no changes made
 
@@ -650,15 +640,15 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
 
 ## Important Notes
 
-1. **Always check system date/time** - Never use hardcoded dates
+1. **Always use the current date from conversation context** - Never use hardcoded dates
 2. **Use extended thinking** - Deeply analyze both the implementation context (CREATE) and refinement request (REFINE)
 3. **Be comprehensive in CREATE mode** - Fill in ALL sections thoughtfully with specific, actionable content
 4. **Be surgical in REFINE mode** - Make requested changes while preserving everything else
 5. **Respect plan status** - Warn about in-progress plans with major changes, refuse completed plans
 6. **Scan all folders for numbering** - MUST check draft/, in_progress/, AND completed/ to find highest number
 7. **PRD references** - Support `@_claude/prd/[file].md` syntax in CREATE mode
-9. **Maintain history** - Always update Refinement History section
-10. **Confirm before changing** - Unless --no-confirm flag is present
+8. **Maintain history** - Always update Refinement History section
+9. **Confirm before changing** - Unless --no-confirm flag is present
 
 ## Execute Now
 

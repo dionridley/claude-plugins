@@ -1,6 +1,6 @@
 ---
 description: Initialize project with standard directory structure
-allowed-tools: Bash(mkdir:*), Bash(ls:*), Bash(tree:*), Bash(find:*), Bash(touch:*), Bash(wc:*), Bash(cat:*), Bash(sed:*), Bash(test:*), Bash(echo:*), Read, Write
+allowed-tools: Bash(mkdir:*), Bash(ls:*), Bash(tree:*), Bash(touch:*), Bash(wc:*), Bash(test:*), Read, Write
 ---
 
 # Initialize Project Management Structure
@@ -78,7 +78,7 @@ Execute these steps in order:
    Use: `touch _claude/docs/.gitkeep` for each file
 
 3. **Get current date:**
-   - Check system environment for current date
+   - Use the current date from the conversation context (available in the system prompt)
    - Format as YYYY-MM-DD
 
 4. **Read the CLAUDE.md template:**
@@ -249,7 +249,9 @@ Execute these steps:
 1. **Count lines in existing CLAUDE.md:**
    - Use `wc -l CLAUDE.md` or similar
 
-2. **Show detection message with options:**
+2. **Show detection message and ask user:**
+
+   Display this summary:
    ```
    ⚠️  CLAUDE.md exists but project is not initialized with plugin structure
 
@@ -257,44 +259,32 @@ Execute these steps:
 
    This appears to be a custom or minimal CLAUDE.md file. The project-management
    plugin can help set up the recommended structure.
-
-   Options:
-     [a] Append plugin template to your existing CLAUDE.md
-         - Adds plugin sections to end of your file
-         - Preserves all existing content
-         - Creates _claude/ folder structure
-
-     [s] Show plugin template (you copy/paste what you want)
-         - Displays full template content
-         - Creates _claude/ folder structure
-         - You manually add desired sections
-
-     [c] Cancel (do nothing)
-
-   Choice [a/s/c]:
    ```
 
-3. **Wait for user to type choice** (Use AskUserQuestion tool if available, otherwise inform user to respond)
+   Then use AskUserQuestion to ask the user what to do, with these options:
+   - **Append** — Add plugin template sections to end of your existing CLAUDE.md (preserves all existing content, creates _claude/ folder structure)
+   - **Show** — Display the full plugin template so you can copy/paste what you want (creates _claude/ folder structure, CLAUDE.md not modified)
+   - **Cancel** — Do nothing, no changes made
 
-4. **Handle user choice:**
+3. **Handle user choice:**
 
-   **If user chooses 'a' (Append):**
+   **If user chooses "Append":**
 
    a. Create `_claude/` folder structure and .gitkeep files (same as State A steps 1-2)
 
    b. Read existing CLAUDE.md content
 
-   c. Get current date from system
+   c. Get current date from the conversation context, formatted as YYYY-MM-DD
 
    d. Read plugin template from `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE-template.md`
 
    e. Replace `{{CURRENT_DATE}}` with actual date
 
    f. Combine content:
-      - Version marker comment at top
+      - The template's comment block (lines starting with `<!--` through `-->`, i.e., the version marker) at top
       - Original CLAUDE.md content
       - Separator line: `\n---\n\n`
-      - Plugin template sections (everything after the comment block)
+      - Plugin template sections starting from `## Project Structure` through end of file (skip the `# CLAUDE.md` heading and its subtitle line)
 
    g. Write combined content to CLAUDE.md
 
@@ -328,11 +318,11 @@ Execute these steps:
         4. Start using plugin commands: /dr-prd, /dr-plan, /dr-research
       ```
 
-   **If user chooses 's' (Show):**
+   **If user chooses "Show":**
 
    a. Create `_claude/` folder structure and .gitkeep files (same as State A steps 1-2)
 
-   b. Get current date from system
+   b. Get current date from the conversation context, formatted as YYYY-MM-DD
 
    c. Read plugin template from `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE-template.md`
 
@@ -367,7 +357,7 @@ Execute these steps:
         3. Commit the new structure: git add _claude/ CLAUDE.md
       ```
 
-   **If user chooses 'c' (Cancel):**
+   **If user chooses "Cancel":**
 
    Show message:
    ```
@@ -382,7 +372,7 @@ Execute these steps:
 
 1. **STATE B verifies CLAUDE.md sections** - Use the template's version markers to detect outdated or missing sections, always ask before modifying
 2. **ALWAYS create .gitkeep files** - All 7 leaf directories need them
-3. **ALWAYS check system date** - Never hardcode dates
+3. **ALWAYS use the current date from conversation context** - Never hardcode dates
 4. **Be safe with existing content** - When updating sections, only replace the specific outdated section, preserve everything else
 5. **Folder paths must use forward slashes** - `_claude/plans/draft` not `_claude\plans\draft`
 

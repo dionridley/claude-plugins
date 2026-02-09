@@ -57,7 +57,7 @@ User-provided reference materials, external documentation, design specifications
 Structured research output with multiple markdown files per topic.
 
 ## Plan Management Workflow
-<!-- section: plan-management-workflow v1 -->
+<!-- section: plan-management-workflow v2 -->
 
 ### IMPORTANT: Plan Execution Rules
 
@@ -93,10 +93,10 @@ Structured research output with multiple markdown files per topic.
 3. **Refine** (optional but recommended): `/dr-plan @_claude/plans/draft/001-plan.md [refinement request]` to enhance with extended thinking
    - Can be repeated multiple times
    - Shows diff summary before applying
-4. **Move to Active**: `/dr-move-plan [plan-number-or-name] in-progress` when ready to implement
+4. **Move to Active**: Move the plan file from `draft/` to `in_progress/` when ready to implement
 5. **Implement**: Work through plan phases systematically
 6. **Minor Adjustments** (as needed): `/dr-plan @_claude/plans/in_progress/001-plan.md [minor changes]` for small corrections
-7. **Complete**: `/dr-move-plan [plan-number-or-name] completed` when finished
+7. **Complete**: Move the plan file from `in_progress/` to `completed/` when finished
 
 **Plan Numbering:**
 Plans are automatically numbered sequentially (001, 002, 003, ..., 999, 1000, ...) to track chronological order. The number is determined by scanning **all three folders** (draft/, in_progress/, completed/) to find the highest existing number, then incrementing by 1. The number stays with the plan when moved between folders.
@@ -112,7 +112,6 @@ This project uses the **project-management** plugin (dr- prefix) which provides:
 - `/dr-research [detailed prompt]` - Conduct deep research with extended thinking (supports multi-line prompts)
 - `/dr-prd [detailed feature description OR @prd-file [refinement]]` - Create or refine comprehensive PRD with extended thinking
 - `/dr-plan [detailed context OR @plan-file [refinement]]` - Create or refine implementation plan with extended thinking (dual-mode)
-- `/dr-move-plan [plan-number-or-name] [stage]` - Move plan between stages (preserves number)
 
 **Dual-Mode Refinement:**
 Both PRDs and plans can be refined using the same commands. Use `/dr-prd @_claude/prd/feature.md [changes]` to refine PRDs or `/dr-plan @_claude/plans/draft/plan.md [changes]` to refine plans. Both commands use extended thinking and show diff summaries. They automatically detect whether you're creating or refining based on the `@` file reference.
