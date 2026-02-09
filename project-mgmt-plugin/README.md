@@ -15,27 +15,7 @@ A structured project management system for Claude Code that provides organized w
 
 ## Installation
 
-### Option 1: Via Claude Code Plugin Manager (Coming Soon)
-
-```bash
-/plugin install project-management
-```
-
-### Option 2: Manual Installation
-
-1. Clone or download this plugin to your Claude Code plugins directory:
-   ```bash
-   cd ~/.claude/plugins  # or your plugins directory
-   git clone <repository-url> project-management
-   ```
-
-2. The plugin will be automatically available in Claude Code
-
-3. Verify installation:
-   ```bash
-   /help
-   ```
-   You should see the `dr-*` commands listed.
+See the [marketplace README](../README.md#installation) for installation instructions.
 
 ## Quick Start
 
@@ -291,7 +271,6 @@ Must support 10k concurrent WebSocket connections initially.
 - **Reads existing plan**: Analyzes current structure, phases, and content
 - **Uses extended thinking**: Deeply analyzes both the existing plan and your refinement request
 - **Generates refined plan**: Applies requested changes intelligently while preserving what works
-- **Creates automatic backup**: Saves `.{filename}.backup` before any changes
 - **Shows diff summary**: Lists additions, modifications, and deletions
 - **Requires confirmation**: Shows changes and asks y/n/diff (unless --no-confirm)
 - **Status-aware behavior**:
@@ -311,7 +290,6 @@ Must support 10k concurrent WebSocket connections initially.
 - **Interactive Q&A**: Guides you through resolving uncertain assumptions and open questions
 - **Prioritizes blocking questions**: Resolves questions marked `[AWAITING]` first
 - **Updates plan file**: Marks resolved questions with `[DECIDED: date]` and documents decisions
-- **Creates backup**: Saves plan backup before making changes
 - **Tracks progress**: Shows summary of resolved vs. remaining items
 
 **Plan Numbering:**
@@ -609,16 +587,6 @@ This will recreate any missing directories and `.gitkeep` files.
 1. Check git history to see what changed
 2. A different tool or user may have modified it
 3. The plugin only creates/modifies CLAUDE.md during `/dr-init` with user consent
-
-### Backup files appearing in plan/prd directories
-
-**Problem**: Seeing `.001-plan.md.backup` files.
-
-**Explanation**: These are automatic backups created during refinement. They're hidden (start with `.`) and contain the previous version. Safe to delete, but useful for reverting changes:
-```bash
-# To restore from backup:
-cp _claude/plans/draft/.001-plan.md.backup _claude/plans/draft/001-plan.md
-```
 
 ## Support
 

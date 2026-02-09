@@ -1,7 +1,7 @@
 ---
 description: Create or refine a detailed implementation plan with extended thinking
 argument-hint: [implementation context OR @plan-file [refinement|summary|answer questions]] [--no-confirm|--in-progress]
-allowed-tools: Read, Write, Edit, Grep, Glob, Bash(ls:*), Bash(cp:*)
+allowed-tools: Read, Write, Edit, Grep, Glob, Bash(ls:*)
 ---
 
 # Create or Refine Implementation Plan
@@ -440,15 +440,7 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
      - No special warnings needed
      - Continue to next step
 
-### Phase 5: Create Backup
-
-1. **Create automatic backup:**
-   - Copy current plan to `.{filename}.backup` in same directory
-   - Example: `_claude/plans/draft/001-auth-system.md` → `_claude/plans/draft/.001-auth-system.md.backup`
-   - Use: `cp _claude/plans/[folder]/[filename].md _claude/plans/[folder]/.[filename].backup`
-   - Overwrite if backup already exists (keep only most recent)
-
-### Phase 6: Analyze Refinement Request
+### Phase 5: Analyze Refinement Request
 
 1. **Use extended thinking to deeply analyze:**
 
@@ -475,7 +467,7 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
    - Do they invalidate completed tasks?
    - Should plan be moved back to draft for major changes?
 
-### Phase 7: Generate Refined Plan
+### Phase 6: Generate Refined Plan
 
 1. **Apply requested changes thoughtfully:**
    - Make the specific changes requested
@@ -500,7 +492,7 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
 
    If section already exists, add new entry to the list.
 
-### Phase 8: Generate Diff Summary
+### Phase 7: Generate Diff Summary
 
 1. **Compare original vs. refined plan and categorize changes:**
 
@@ -545,10 +537,10 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
    Scope: [Minor/Major] changes
    ```
 
-### Phase 9: Request Confirmation
+### Phase 8: Request Confirmation
 
 1. **If --no-confirm flag is present:**
-   - Skip to Phase 10 immediately
+   - Skip to Phase 9 immediately
    - Do not ask for confirmation
 
 2. **Otherwise, show confirmation prompt based on status:**
@@ -565,7 +557,7 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
 
    This appears to be a major structural change that could invalidate completed work.
 
-   [Show diff summary from Phase 8]
+   [Show diff summary from Phase 7]
 
    Recommendations:
      1. Move plan back to draft for major redesign:
@@ -587,7 +579,7 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
 
    Some tasks may already be completed. Verify changes don't conflict with work done.
 
-   [Show diff summary from Phase 8]
+   [Show diff summary from Phase 7]
 
    Apply these changes? [y/n/diff]:
    ```
@@ -596,13 +588,13 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
 
    Show diff summary:
    ```
-   [Show diff summary from Phase 8]
+   [Show diff summary from Phase 7]
 
    Apply these changes? [y/n/diff]:
    ```
 
 3. **Wait for user response:**
-   - **y** or **yes**: Proceed to Phase 10
+   - **y** or **yes**: Proceed to Phase 9
    - **n** or **no**: Cancel, show cancellation message, STOP
    - **diff**: Show detailed line-by-line diff using a comparison, then ask again
 
@@ -610,26 +602,25 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
    ```
    ❌ Refinement cancelled - no changes made
 
-   Your plan remains unchanged. The backup was not needed and has been removed.
+   Your plan remains unchanged.
 
    To try again with different changes:
      /dr-plan @_claude/plans/[folder]/[filename].md [different refinement request]
    ```
-   - Remove the backup file created
    - STOP - do not proceed
 
-### Phase 10: Apply Changes
+### Phase 9: Apply Changes
 
 1. **Write refined plan to original file:**
    - Use Write tool to replace entire file content
    - Ensure atomic operation (write succeeds completely or not at all)
    - Preserve file permissions
 
-### Phase 11: Confirm Success
+### Phase 10: Confirm Success
 
 1. **Show success message:**
 
-   **IMPORTANT**: Check the scope of changes from Phase 8.
+   **IMPORTANT**: Check the scope of changes from Phase 7.
 
    **For all refinements:**
 
@@ -643,8 +634,6 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
 
    Changes applied:
      [Concise summary of changes - same as diff summary]
-
-   Backup saved: _claude/plans/[folder]/.[filename].backup
 
    Refinement count: [count] (see Refinement History in plan)
 
@@ -667,8 +656,7 @@ This mode helps resolve uncertain assumptions and open questions in a plan throu
 4. **Be surgical in REFINE mode** - Make requested changes while preserving everything else
 5. **Respect plan status** - Warn about in-progress plans with major changes, refuse completed plans
 6. **Scan all folders for numbering** - MUST check draft/, in_progress/, AND completed/ to find highest number
-7. **Create backups** - Always backup before refining
-8. **PRD references** - Support `@_claude/prd/[file].md` syntax in CREATE mode
+7. **PRD references** - Support `@_claude/prd/[file].md` syntax in CREATE mode
 9. **Maintain history** - Always update Refinement History section
 10. **Confirm before changing** - Unless --no-confirm flag is present
 

@@ -3,11 +3,8 @@
   Template generated: {{CURRENT_DATE}}
 
   This file is yours to customize for your project.
-  The plugin will never automatically modify it after creation.
-
-  To adopt new template features from future plugin versions:
-  - Review plugin release notes
-  - Manually add desired improvements to this file
+  Sections managed by the plugin have version markers (e.g. <!-- section: name v1 -->).
+  Running /dr-init will check these markers and offer to update outdated sections.
 -->
 
 # CLAUDE.md
@@ -60,6 +57,7 @@ User-provided reference materials, external documentation, design specifications
 Structured research output with multiple markdown files per topic.
 
 ## Plan Management Workflow
+<!-- section: plan-management-workflow v1 -->
 
 ### IMPORTANT: Plan Execution Rules
 
@@ -94,7 +92,6 @@ Structured research output with multiple markdown files per topic.
 2. **Review**: Examine the plan to identify any improvements or missing details
 3. **Refine** (optional but recommended): `/dr-plan @_claude/plans/draft/001-plan.md [refinement request]` to enhance with extended thinking
    - Can be repeated multiple times
-   - Automatically creates backup before changes
    - Shows diff summary before applying
 4. **Move to Active**: `/dr-move-plan [plan-number-or-name] in-progress` when ready to implement
 5. **Implement**: Work through plan phases systematically
@@ -107,6 +104,7 @@ Plans are automatically numbered sequentially (001, 002, 003, ..., 999, 1000, ..
 Example: If your completed/ folder has plans 001-045 and in_progress/ has 046-047, the next plan created will be 048, even if draft/ is empty.
 
 ## Available Commands
+<!-- section: available-commands v1 -->
 
 This project uses the **project-management** plugin (dr- prefix) which provides:
 
@@ -117,7 +115,7 @@ This project uses the **project-management** plugin (dr- prefix) which provides:
 - `/dr-move-plan [plan-number-or-name] [stage]` - Move plan between stages (preserves number)
 
 **Dual-Mode Refinement:**
-Both PRDs and plans can be refined using the same commands. Use `/dr-prd @_claude/prd/feature.md [changes]` to refine PRDs or `/dr-plan @_claude/plans/draft/plan.md [changes]` to refine plans. Both commands use extended thinking, create automatic backups, and show diff summaries. They automatically detect whether you're creating or refining based on the `@` file reference.
+Both PRDs and plans can be refined using the same commands. Use `/dr-prd @_claude/prd/feature.md [changes]` to refine PRDs or `/dr-plan @_claude/plans/draft/plan.md [changes]` to refine plans. Both commands use extended thinking and show diff summaries. They automatically detect whether you're creating or refining based on the `@` file reference.
 
 **IMPORTANT - Date Handling:**
 When creating any document with dates or timestamps, ALWAYS check the system environment for the current date/time. NEVER use hardcoded or assumed dates.
@@ -155,20 +153,20 @@ When creating any document with dates or timestamps, ALWAYS check the system env
 5. **Clear Communication**: Write clear commit messages and PR descriptions
 
 ## Task Completion Protocol
+<!-- section: task-completion-protocol v1 -->
 
-When working on tasks from a plan phase:
+When working on tasks from an implementation plan, follow this protocol **for each phase**:
 
-1. **Complete the implementation** of the tasks
-2. **Verify completion** by:
-   - Testing the functionality (if applicable)
-   - Confirming all requirements are met
-   - Checking for any remaining work
-3. **Report to the user** with a summary of what was completed
-4. **Wait for user confirmation** before marking tasks as complete in the plan
-5. **Update the plan** only after user confirms the tasks are done
-6. **Then ask** about next steps
+1. **Work through one phase at a time** following the plan's phase order
+2. **Complete all tasks in the phase** and verify each works (run tests, check behavior)
+3. **Update the plan file immediately** after completing the phase:
+   - Check the boxes (`[x]`) for all completed tasks in that phase
+   - Check the boxes for completed test verification items
+   - Update the "Actual Time" in Implementation Notes if time tracking is present
+4. **Report to the user** with a summary of what was completed and what phase is next
+5. **Proceed to the next phase** or wait for user direction
 
-This ensures proper tracking and prevents premature task completion marking.
+The plan file must always reflect the current state of implementation. Never leave completed tasks unchecked.
 
 ---
 

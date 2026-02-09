@@ -4,11 +4,7 @@ Skills and commands to assist with software engineering and coding tasks.
 
 ## Installation
 
-Add this plugin to your Claude Code configuration:
-
-```bash
-claude mcp add-plugin https://github.com/dionridley/claude-plugins engineering-tools
-```
+See the [marketplace README](../README.md#installation) for installation instructions.
 
 ## Features
 
