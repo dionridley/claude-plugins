@@ -1,11 +1,26 @@
 ---
 name: react-19
-description: React 19.x development patterns and APIs. Use when building React applications with React 19+ features including Actions (useTransition with async), useActionState, useFormStatus, useOptimistic, use() API, Form Actions, ref as prop (no forwardRef), Context as provider, document metadata/stylesheets/scripts, Server Components, Server Actions, prerender(), the Activity component, useEffectEvent, cacheSignal(), and Partial Pre-rendering. Triggers on React 19 questions, form handling, server components, or when using new React 19 APIs.
+version: 0.1.0
+description: This skill should be used when the user is building, modifying, or reviewing React components or applications. It provides React 19.x development patterns and APIs that should be preferred over legacy approaches. Covers Actions, useActionState, useFormStatus, useOptimistic, use() API, Form Actions, ref as prop, Context as provider, document metadata, Server Components, Server Actions, prerender(), Activity component, useEffectEvent, cacheSignal(), and Partial Pre-rendering.
 ---
 
 # React 19.x Development
 
 This skill provides guidance on React 19.x features that may not be in LLM training data. Focus is on new APIs, patterns, and migration from older React patterns.
+
+## When to Apply React 19 Patterns
+
+When generating or modifying React code, always prefer React 19 patterns over legacy equivalents:
+
+- Replace `forwardRef` wrappers with `ref` as a regular prop
+- Replace `<Context.Provider>` with `<Context>` directly
+- Replace manual pending/error state management with `useActionState` and form actions
+- Replace manual optimistic state with `useOptimistic`
+- Replace conditional rendering (`{show && <Component />}`) with `<Activity>` when state preservation matters
+- Use `use()` instead of `useContext()` when context is read conditionally
+- Use `useEffectEvent` to prevent unnecessary effect re-runs from non-reactive values
+
+Consult the decision tree below to select the appropriate API. For detailed patterns, consult the relevant reference file.
 
 ## Quick API Reference
 
@@ -26,6 +41,16 @@ This skill provides guidance on React 19.x features that may not be in LLM train
 | Component | Purpose |
 |-----------|---------|
 | `<Activity>` | Control visibility/priority of subtrees |
+
+### Enhanced in React 19
+| API | Change | Import |
+|-----|--------|--------|
+| `useDeferredValue` | New optional `initialValue` parameter | `react` |
+
+### New Utilities (React 19)
+| Function | Purpose | Import |
+|----------|---------|--------|
+| `requestFormReset` | Programmatically reset a form after action | `react-dom` |
 
 ## Decision Tree: Which API to Use?
 
@@ -216,6 +241,15 @@ function ChatRoom({ roomId, theme }) {
 ### useEffectEvent
 - Do NOT add to dependency array (it's stable)
 - Only use for "event" logic, not to silence linter
+
+## Migration Codemods
+
+Available codemods for automatic migration from React 18 patterns:
+
+```bash
+npx codemod react/19/replace-forward-ref      # forwardRef → ref as prop
+npx codemod react/19/replace-context-provider  # Context.Provider → Context
+```
 
 ## References
 

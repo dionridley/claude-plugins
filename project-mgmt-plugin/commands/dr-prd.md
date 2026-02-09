@@ -1,7 +1,7 @@
 ---
 description: Create or refine a comprehensive PRD with extended thinking
 argument-hint: [feature description OR @prd-file [refinement request]] [--no-confirm]
-allowed-tools: Read, Write, Edit, Bash(ls:*), Bash(cp:*), Bash(grep:*), Grep
+allowed-tools: Read, Write, Edit, Bash(ls:*), Bash(cp:*), Bash(mkdir:*), Grep
 ---
 
 # Create or Refine Product Requirement Document (PRD)
@@ -42,8 +42,8 @@ You are executing the `/dr-prd` command in dual-mode: CREATE or REFINE.
 
 ### Phase 2: Analyze and Plan
 
-1. **CRITICAL: Check current date/time**
-   - Access the system environment to get the ACTUAL current date
+1. **CRITICAL: Get current date**
+   - Use the current date from the conversation context (available in the system prompt)
    - Format as YYYY-MM-DD
    - NEVER use hardcoded or assumed dates
 
@@ -63,18 +63,21 @@ You are executing the `/dr-prd` command in dual-mode: CREATE or REFINE.
 
 ### Phase 3: Create PRD
 
-1. **Read PRD template:**
+1. **Ensure directory exists:**
+   - If `_claude/prd/` does not already exist, create it with `mkdir -p _claude/prd` and inform the user they should run `/dr-init` to set up the full project structure
+
+2. **Read PRD template:**
    - Read from plugin: `${CLAUDE_PLUGIN_ROOT}/templates/prd-template.md`
 
-2. **Create PRD file:**
+3. **Create PRD file:**
    - Path: `_claude/prd/[feature-slug].md`
 
-3. **Thoughtfully populate ALL sections** based on your analysis:
+4. **Thoughtfully populate ALL sections** based on your analysis:
 
    **Metadata:**
    - Status: Draft
    - Version: 1.0
-   - Created: [ACTUAL current date from system]
+   - Created: [current date from conversation context]
    - Author: Claude Code
    - Last Updated: [same as Created]
 
@@ -120,7 +123,7 @@ You are executing the `/dr-prd` command in dual-mode: CREATE or REFINE.
    **Refinement History:**
    - Version 1.0 - [Date] - Initial PRD creation
 
-4. **If critical information is missing:**
+5. **If critical information is missing:**
    - Ask 1-2 clarifying questions before proceeding
    - Only ask if the answer would significantly improve the PRD
 
@@ -345,7 +348,7 @@ You are executing the `/dr-prd` command in dual-mode: CREATE or REFINE.
    - Status: Keep same UNLESS major changes warrant "Under Review"
    - Version: Increment appropriately (minor or major)
    - Created: KEEP ORIGINAL (never change)
-   - Last Updated: Set to ACTUAL current date from system
+   - Last Updated: Set to current date from conversation context
    - Author: Keep original
 
 3. **Add to Refinement History section:**
@@ -400,13 +403,11 @@ You are executing the `/dr-prd` command in dual-mode: CREATE or REFINE.
    - Skip to Phase 10 immediately
    - Do not ask for confirmation
 
-2. **Otherwise, show confirmation prompt:**
+2. **Otherwise, show status context and diff, then ask for confirmation:**
 
-   **IMPORTANT**: Check the list of linked plans you found in Phase 4. If any plans were found, include the linked plans warning in your confirmation message.
+   **IMPORTANT**: Check the list of linked plans you found in Phase 4. If any plans were found, include the linked plans warning in your display message.
 
-   **If PRD status is Approved:**
-
-   Show this message:
+   **If PRD status is Approved, display:**
    ```
    ⚠️  WARNING: This PRD is Approved
 
@@ -419,29 +420,14 @@ You are executing the `/dr-prd` command in dual-mode: CREATE or REFINE.
    This PRD has been approved by stakeholders. Changes may require:
      - Stakeholder re-approval
      - Updates to linked implementation plans
-   ```
-
-   Then, IF you found linked plans in Phase 4, add this section:
-   ```
-   Referenced by [N] plans:
-     - [plan-file-1]
-     - [plan-file-2]
-   ```
-
-   Then continue with:
-   ```
 
    Consider:
      1. Moving status back to "Under Review" for significant changes
      2. Creating a new major version (v[N].0) for major scope changes
      3. Continuing with minor refinements only
-
-   Continue with changes to Approved PRD? [y/n]:
    ```
 
-   **If PRD status is Under Review:**
-
-   Show this message:
+   **If PRD status is Under Review, display:**
    ```
    ℹ️  Note: This PRD is Under Review
 
@@ -449,47 +435,28 @@ You are executing the `/dr-prd` command in dual-mode: CREATE or REFINE.
    Status: Under Review
 
    Stakeholders may be reviewing this PRD. Consider coordinating changes.
-
-   [Show diff summary from Phase 8]
    ```
 
-   Then, IF you found linked plans in Phase 4, add this warning:
-   ```
-   ⚠️  This PRD is referenced by [N] plans:
-     - [plan-file-1]
-     - [plan-file-2]
-   ```
+   **For all statuses (including Draft), then display:**
+   - The diff summary from Phase 8
+   - IF linked plans were found in Phase 4, add:
+     ```
+     ⚠️  This PRD is referenced by [N] plans:
+       - [plan-file-1]
+       - [plan-file-2]
+     ```
 
-   Then finish with:
-   ```
-   Apply these changes? [y/n/diff]:
-   ```
+   **Then use AskUserQuestion** to ask the user what to do, with these options:
+   - **Apply** — Apply the changes to the PRD
+   - **Show Diff** — Show a detailed line-by-line diff before deciding
+   - **Cancel** — Cancel refinement, no changes made
 
-   **If PRD status is Draft (normal case):**
+3. **Handle user response:**
+   - **Apply**: Proceed to Phase 10
+   - **Show Diff**: Show detailed line-by-line comparison, then ask again with AskUserQuestion (Apply/Cancel)
+   - **Cancel**: Show cancellation message and STOP
 
-   Show diff summary:
-   ```
-   [Show diff summary from Phase 8]
-   ```
-
-   Then, IF you found linked plans in Phase 4, add this warning:
-   ```
-   ⚠️  This PRD is referenced by [N] plans:
-     - [plan-file-1]
-     - [plan-file-2]
-   ```
-
-   Then finish with:
-   ```
-   Apply these changes? [y/n/diff]:
-   ```
-
-3. **Wait for user response:**
-   - **y** or **yes**: Proceed to Phase 10
-   - **n** or **no**: Cancel, show cancellation message, STOP
-   - **diff**: Show detailed line-by-line diff using a comparison, then ask again
-
-4. **If user cancels (n):**
+4. **If user cancels:**
    ```
    ❌ Refinement cancelled - no changes made
 
@@ -566,7 +533,7 @@ You are executing the `/dr-prd` command in dual-mode: CREATE or REFINE.
 
 ## Important Notes
 
-1. **Always check system date/time** - Never use hardcoded dates
+1. **Always use the current date from conversation context** - Never use hardcoded dates
 2. **Use extended thinking** - Deeply analyze both the feature request (CREATE) and refinement request (REFINE)
 3. **Be comprehensive in CREATE mode** - Fill in ALL sections thoughtfully, don't leave templates empty
 4. **Be surgical in REFINE mode** - Make requested changes while preserving everything else

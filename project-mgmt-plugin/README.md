@@ -272,7 +272,7 @@ Must support 10k concurrent WebSocket connections initially.
 - **Uses extended thinking**: Deeply analyzes both the existing plan and your refinement request
 - **Generates refined plan**: Applies requested changes intelligently while preserving what works
 - **Shows diff summary**: Lists additions, modifications, and deletions
-- **Requires confirmation**: Shows changes and asks y/n/diff (unless --no-confirm)
+- **Requires confirmation**: Shows changes and asks Apply/Show Diff/Cancel (unless --no-confirm)
 - **Status-aware behavior**:
   - **Draft plans**: All changes allowed
   - **In-progress plans**: Warns about major changes, suggests moving back to draft for restructuring

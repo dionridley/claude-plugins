@@ -37,12 +37,11 @@ Creates distinctive, production-grade frontend interfaces with high design quali
 
 #### react-19
 
-Provides guidance on React 19.x features and APIs that may not be in LLM training data. Automatically triggered when working with:
+Ensures React 19 patterns are preferred over legacy approaches whenever building, modifying, or reviewing React code. Automatically triggered when working with any React application.
 
-- React 19+ features and new hooks
-- Form handling with Actions
-- Server Components and Server Actions
-- New React 19 patterns and migrations
+- Prioritizes React 19 patterns over older equivalents
+- Framework-agnostic Server Components guidance (not tied to Next.js)
+- Migration codemods for automated upgrades
 
 **Key features:**
 - New hooks: useActionState, useFormStatus, useOptimistic, use()
@@ -51,12 +50,13 @@ Provides guidance on React 19.x features and APIs that may not be in LLM trainin
 - Breaking changes: ref as prop, Context as provider
 - Decision tree for choosing the right API
 - Common pitfalls and migration patterns
+- Migration codemods for forwardRef and Context.Provider
 
 **Example prompts:**
+- "Build a form component for user registration"
 - "How do I handle form submissions in React 19?"
-- "What's the difference between useFormStatus and useActionState?"
 - "Show me how to use the Activity component for state preservation"
-- "How do I migrate from forwardRef to the new ref prop pattern?"
+- "Help me migrate this component to React 19 patterns"
 
 ## Development
 

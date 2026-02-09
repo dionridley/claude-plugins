@@ -5,9 +5,7 @@
 
 ## Overview
 
-[1-2 paragraph summary of research]
-
-{{OVERVIEW}}
+[1-2 paragraph executive summary of what was researched and key insights discovered]
 
 ## Structure
 

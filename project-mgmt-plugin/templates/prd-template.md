@@ -10,8 +10,6 @@
 
 [What problem does this feature solve? Who experiences this problem?]
 
-{{PROBLEM_STATEMENT}}
-
 ## Goals and Objectives
 
 ### Primary Goals
@@ -55,8 +53,6 @@ So that [benefit]
 ## Technical Considerations
 
 [Architecture notes, technology choices, constraints]
-
-{{TECHNICAL_CONSIDERATIONS}}
 
 ## Dependencies
 
