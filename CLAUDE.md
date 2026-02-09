@@ -118,6 +118,25 @@ Templates in `templates/` use placeholder patterns that commands fill in:
 - `[Plan Name]` - Generated from context
 - `${CLAUDE_PLUGIN_ROOT}` - Plugin root path (runtime)
 
+### Template Section Versioning
+
+The `CLAUDE-template.md` uses section version markers to track content changes. This allows `/dr-init` to detect outdated sections in existing projects and offer to update them.
+
+**Marker format:** Place an HTML comment immediately after the `##` heading:
+```markdown
+## Section Name
+<!-- section: section-name-slug v1 -->
+
+Section content here...
+```
+
+**Rules:**
+- When **modifying content** in a versioned section of `CLAUDE-template.md`, **bump the version number** (e.g., `v1` → `v2`)
+- When **adding a new section** that should be tracked, add a version marker starting at `v1`
+- The marker slug must be lowercase kebab-case matching the section purpose
+- `/dr-init` reads these markers from the template and compares them against the user's CLAUDE.md to detect outdated or missing sections
+- Sections without markers are not version-tracked (e.g., `## Project Structure`, `## Development Principles`)
+
 ## Plugin Manifest (plugin.json)
 
 Required fields:

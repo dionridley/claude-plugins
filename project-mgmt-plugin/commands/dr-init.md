@@ -126,40 +126,120 @@ Execute these steps:
    - If any folder is missing, create it with `mkdir -p`
    - Create .gitkeep file in any newly created leaf directory
 
-3. **NEVER modify CLAUDE.md:**
-   - Do not read it
-   - Do not write to it
-   - Leave it completely untouched
+3. **Verify CLAUDE.md sections (Tier 1 + Tier 2):**
 
-4. **Show appropriate feedback:**
+   a. **Read the CLAUDE-template from the plugin:**
+      - Read: `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE-template.md`
+      - Extract all section version markers matching the pattern `<!-- section: [name] v[N] -->`
+      - Build a list of versioned sections, each with:
+        - Section heading (the `##` heading immediately above the marker)
+        - Section name (from the marker, e.g., `task-completion-protocol`)
+        - Current version number (from the marker, e.g., `1`)
+        - Section content (from the heading through to the next `##` heading or end of plugin-managed area)
 
-   If nothing was missing:
+   b. **Read the user's CLAUDE.md:**
+      - Read the full contents of `CLAUDE.md`
+
+   c. **Tier 1 — Section existence check:**
+      - For each versioned section from the template, check if its `##` heading exists in the user's CLAUDE.md
+      - If the heading is not found → mark as **missing**
+
+   d. **Tier 2 — Content correctness check:**
+      - For sections that DO exist in the user's CLAUDE.md, search for the version marker comment (e.g., `<!-- section: task-completion-protocol v1 -->`)
+      - If the marker is not found at all → mark as **outdated** (pre-versioning content)
+      - If the marker is found but the version number is lower than the template's current version → mark as **outdated**
+      - If the marker matches the current version → mark as **current**
+
+   e. **Categorize all results:**
+      - ✓ **Current** — Section exists with current version marker
+      - ⚠ **Outdated** — Section exists but version marker is missing or old
+      - ✗ **Missing** — Section heading not found
+
+4. **Show verification results and handle updates:**
+
+   **If all sections are current and no folders were missing:**
    ```
    ✅ Project structure verified
 
-   Directory structure: Already exists (✓)
-   CLAUDE.md: Already exists (✓)
+   Directory structure: Complete (✓)
+   CLAUDE.md sections:
+     ✓ Plan Management Workflow (current)
+     ✓ Available Commands (current)
+     ✓ Task Completion Protocol (current)
 
-   Your project is already initialized.
+   Your project is fully up to date.
+   ```
+   - STOP — nothing to do
 
-   💡 Your CLAUDE.md is customized for your project. The plugin will never
-      automatically modify it to preserve your customizations.
+   **If any sections are outdated or missing:**
 
-      To adopt new template features from plugin updates:
-      1. Review plugin release notes
-      2. Manually add desired improvements to your CLAUDE.md
+   Show the verification summary:
+   ```
+   ✅ Project structure verified
+
+   Directory structure: [Complete/Updated — list any created folders]
+
+   CLAUDE.md: [N] section(s) need attention
+
+     ✓ Plan Management Workflow (current)
+     ⚠ Task Completion Protocol (outdated — update available)
+     ✗ [New Section Name] (missing)
+
    ```
 
-   If folders were missing:
+   Then use AskUserQuestion to ask the user what to do, with these options:
+   - **Update** — Apply changes to outdated/missing sections (preserves customizations in other sections)
+   - **Show** — Display the new section content so you can manually update
+   - **Skip** — Keep CLAUDE.md as-is
+
+5. **Handle user choice:**
+
+   **If user chooses "Update":**
+
+   a. Read the user's CLAUDE.md content
+
+   b. For each **outdated** section:
+      - Locate the section in the user's CLAUDE.md (from its `##` heading to the next `##` heading)
+      - Replace the entire section content with the current version from the template
+
+   c. For each **missing** section:
+      - Find the `<!-- End of plugin-managed section -->` comment in the user's CLAUDE.md
+      - Insert the section from the template immediately before that comment
+      - If the comment doesn't exist, append the section at the end of the file
+
+   d. Write the updated CLAUDE.md
+
+   e. Show confirmation:
+      ```
+      ✅ CLAUDE.md updated
+
+      Sections updated:
+        ⚠→✓ Task Completion Protocol (updated to v1)
+      Sections added:
+        ✗→✓ [New Section Name] (added)
+      Sections preserved (unchanged):
+        ✓ Plan Management Workflow
+        [... all other sections]
+
+      Your project-specific customizations have been preserved.
+      ```
+
+   **If user chooses "Show":**
+
+   a. For each outdated or missing section, display the full section content from the template
+   b. Wrap in a code fence so the user can copy/paste
+   c. Show instructions:
+      ```
+      Copy the sections above into your CLAUDE.md to update.
+
+      Run /dr-init again after updating to verify.
+      ```
+
+   **If user chooses "Skip":**
    ```
-   ✅ Project structure updated
+   ℹ️  CLAUDE.md not modified
 
-   Created missing directories:
-     _claude/plans/in_progress/ (.gitkeep added)
-
-   CLAUDE.md: Preserved (✓)
-
-   Your existing CLAUDE.md has been preserved. Missing directories have been created.
+   Run /dr-init again when you're ready to update.
    ```
 
 #### STATE C - Uninitialized (Has CLAUDE.md but no plugin structure)
@@ -300,10 +380,10 @@ Execute these steps:
 
 ### Important Notes
 
-1. **NEVER modify CLAUDE.md if it has the version marker** - This means the user has already customized it
+1. **STATE B verifies CLAUDE.md sections** - Use the template's version markers to detect outdated or missing sections, always ask before modifying
 2. **ALWAYS create .gitkeep files** - All 7 leaf directories need them
 3. **ALWAYS check system date** - Never hardcode dates
-4. **Be safe with existing content** - When in doubt, preserve user's work
+4. **Be safe with existing content** - When updating sections, only replace the specific outdated section, preserve everything else
 5. **Folder paths must use forward slashes** - `_claude/plans/draft` not `_claude\plans\draft`
 
 ### Plugin Template Location
