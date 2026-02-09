@@ -5,6 +5,37 @@ All notable changes to the Project Management Plugin will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-02-08
+
+### Added
+
+- **Template section versioning** for `CLAUDE-template.md`
+  - Sections now have version markers (`<!-- section: name v1 -->`) to track content changes
+  - `/dr-init` detects outdated or missing sections in existing projects and offers to update them
+  - Two-tier verification: Tier 1 checks section existence, Tier 2 checks content is current
+
+- **CLAUDE.md verification in `/dr-init`** (STATE B)
+  - Re-running `/dr-init` on an already-initialized project now verifies CLAUDE.md sections
+  - Shows categorized results: current, outdated, or missing
+  - Offers Update (apply changes), Show (display for manual copy), or Skip options
+  - Replaces the previous "never modify CLAUDE.md" behavior
+
+### Changed
+
+- **Task Completion Protocol** - Claude now proactively checks plan checkboxes after completing each phase instead of waiting for user confirmation
+  - Work through one phase at a time
+  - Update the plan file immediately after completing a phase
+  - Report what was completed and what phase is next
+
+### Removed
+
+- **Plan backup files** - Removed automatic `.backup` file creation during plan refinement and question resolution
+  - Backup creation via `Bash(cp:*)` removed from `/dr-plan` REFINE mode
+  - Backup creation removed from `/dr-plan` QUESTION RESOLUTION mode
+  - Backup references removed from success/cancellation messages
+  - `Bash(cp:*)` removed from `/dr-plan` allowed-tools
+  - Troubleshooting section about backup files removed from README
+
 ## [1.2.0] - 2026-01-07
 
 ### Removed
