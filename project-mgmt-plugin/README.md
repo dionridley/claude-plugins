@@ -15,27 +15,7 @@ A structured project management system for Claude Code that provides organized w
 
 ## Installation
 
-### Option 1: Via Claude Code Plugin Manager (Coming Soon)
-
-```bash
-/plugin install project-management
-```
-
-### Option 2: Manual Installation
-
-1. Clone or download this plugin to your Claude Code plugins directory:
-   ```bash
-   cd ~/.claude/plugins  # or your plugins directory
-   git clone <repository-url> project-management
-   ```
-
-2. The plugin will be automatically available in Claude Code
-
-3. Verify installation:
-   ```bash
-   /help
-   ```
-   You should see the `dr-*` commands listed.
+See the [marketplace README](../README.md#installation) for installation instructions.
 
 ## Quick Start
 
