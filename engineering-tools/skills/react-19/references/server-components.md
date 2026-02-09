@@ -15,10 +15,12 @@ Server Components run on the server (at build time or request time) and are neve
 - Use server-only APIs
 - Keep secrets secure
 
+> **Framework Note:** Server Components require a compatible bundler/framework (Next.js App Router, Waku, etc.). The `'use server'` and `'use client'` directives are part of React 19. Utilities like route revalidation, cookie access, and redirects are provided by your framework — examples below use Next.js imports for illustration where noted.
+
 ### Basic Structure
 
 ```jsx
-// page.jsx (Server Component by default in Next.js App Router)
+// page.jsx (Server Component - the default in frameworks like Next.js App Router)
 import { db } from '@/lib/db';
 import ClientInteractive from './ClientInteractive';
 
@@ -103,7 +105,7 @@ Functions that run on the server but can be called from Client Components.
 'use server';
 
 import { db } from '@/lib/db';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath } from 'next/cache'; // Next.js-specific; other frameworks have equivalent APIs
 
 export async function createPost(formData) {
   const title = formData.get('title');
@@ -165,7 +167,7 @@ export default function DeleteButton({ postId }) {
   async function handleDelete() {
     'use server';
     await db.posts.delete({ where: { id: postId } });
-    revalidatePath('/posts');
+    revalidatePath('/posts'); // Framework-specific revalidation
   }
 
   return (
@@ -388,7 +390,9 @@ export async function createItem(formData) {
 ### Authentication in Server Components
 
 ```jsx
+// Framework-specific imports (Next.js shown; adapt for your framework)
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { verifyToken } from '@/lib/auth';
 
 async function ProtectedPage() {
@@ -405,9 +409,12 @@ async function ProtectedPage() {
 
 ### Revalidation After Mutations
 
+Revalidation APIs are framework-specific. The pattern is the same across frameworks: after a mutation, signal that cached data is stale.
+
 ```jsx
 'use server';
 
+// Next.js revalidation APIs (other frameworks provide equivalents)
 import { revalidatePath, revalidateTag } from 'next/cache';
 
 export async function updatePost(id, data) {
@@ -451,7 +458,7 @@ async function SlowPosts() {
 ```jsx
 'use server';
 
-import { redirect } from 'next/navigation';
+import { redirect } from 'next/navigation'; // Framework-specific redirect
 
 export async function createAndRedirect(formData) {
   const item = await db.items.create({
