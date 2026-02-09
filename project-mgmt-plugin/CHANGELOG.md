@@ -5,6 +5,23 @@ All notable changes to the Project Management Plugin will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-02-09
+
+### Changed
+
+- **Date handling standardized** across all commands (`/dr-init`, `/dr-research`, `/dr-prd`, `/dr-plan`) to use conversation context instead of ambiguous "system environment" for cross-platform reliability
+- **User confirmation prompts** in `/dr-init`, `/dr-prd`, and `/dr-plan` now use structured AskUserQuestion with labeled options instead of text-based `[y/n/diff]` prompts
+- **Directory existence checks** added to `/dr-research`, `/dr-prd`, and `/dr-plan` CREATE modes — commands now suggest running `/dr-init` if `_claude/` directories don't exist
+- **Allowed-tools trimmed** in `/dr-init` — removed unused `Bash(find:*)`, `Bash(cat:*)`, `Bash(sed:*)`, `Bash(echo:*)`
+- **Allowed-tools updated** in `/dr-prd` — replaced `Bash(grep:*)` with `Bash(mkdir:*)` (search uses Grep tool instead)
+- **Allowed-tools updated** in `/dr-plan` — added `Bash(mkdir:*)`
+
+### Fixed
+
+- **CLAUDE-template.md** — removed stale `/dr-move-plan` references (command was removed in v1.2.0), bumped plan-management-workflow section version to v2
+- **dr-plan.md** — fixed duplicate step 4 numbering in Phase 4, fixed Important Notes numbering gap (7,9,10 → 7,8,9)
+- **Template cleanup** — removed redundant `{{PLACEHOLDER}}` variables from `plan-template.md`, `prd-template.md`, and `research-index-template.md` that duplicated human-readable instructions
+
 ## [1.3.0] - 2026-02-08
 
 ### Added
