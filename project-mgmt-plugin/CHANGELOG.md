@@ -5,6 +5,29 @@ All notable changes to the Project Management Plugin will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2026-02-22
+
+### Fixed
+
+- **PR validation before update** — strengthened instructions so Claude reliably runs `gh pr view` before any `gh pr edit`, with explicit CRITICAL/REQUIRED markers to prevent skipping the validation step
+
+## [1.4.0] - 2026-02-22
+
+### Added
+
+- **GitHub PR auto-update** in `/dr-plan summary` mode
+  - Optionally pass a GitHub PR URL: `/dr-plan @plan.md summary https://github.com/org/repo/pull/123`
+  - Automatically updates the PR title (set to the commit message title) and description (set to the generated PR summary) via `gh pr edit`
+  - Validates PR is open before updating — blocks update on merged/closed PRs with clear error message
+  - Prompts for confirmation if the PR already has an existing description before overwriting
+  - Falls back to display-only mode if the `gh` command fails
+  - When no PR URL is provided, existing copy-paste behavior is unchanged
+
+### Changed
+
+- **Allowed-tools updated** in `/dr-plan` — added `Bash(gh pr edit:*)` and `Bash(gh pr view:*)` scoped to PR operations only
+- **`summary.md` restructured** with conditional output paths (Path A: update PR directly, Path B: display for manual copy)
+
 ## [1.3.1] - 2026-02-09
 
 ### Changed
