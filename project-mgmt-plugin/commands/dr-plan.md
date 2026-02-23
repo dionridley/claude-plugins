@@ -1,7 +1,7 @@
 ---
 description: Create or refine a detailed implementation plan with extended thinking
 argument-hint: [implementation context OR @plan-file [refinement|summary|answer questions]] [--no-confirm|--in-progress]
-allowed-tools: Read, Write, Edit, Grep, Glob, Bash(ls:*), Bash(mkdir:*)
+allowed-tools: Read, Write, Edit, Grep, Glob, Bash(ls:*), Bash(mkdir:*), Bash(gh pr edit:*), Bash(gh pr view:*)
 ---
 
 # Create or Refine Implementation Plan
@@ -36,7 +36,7 @@ You are executing the `/dr-plan` command in multi-mode: CREATE, REFINE, SUMMARY,
 
 This mode generates a Pull Request summary from the plan content.
 
-**Trigger**: `/dr-plan @_claude/plans/.../plan-file.md summary`
+**Trigger**: `/dr-plan @_claude/plans/.../plan-file.md summary [optional-github-pr-url]`
 
 ### Instructions
 
@@ -46,7 +46,8 @@ This mode generates a Pull Request summary from the plan content.
 2. **Apply those instructions:**
    - The plan content is already available in the conversation (auto-expanded via `@`)
    - Follow the instructions in summary.md to generate the PR summary
-   - Display the formatted output as specified
+   - If a GitHub PR URL is present in the args, the summary will be pushed directly to the PR
+   - If no URL, the summary is displayed for manual copying
 
 3. **Do NOT proceed to other modes** - STOP after completing the summary
 
