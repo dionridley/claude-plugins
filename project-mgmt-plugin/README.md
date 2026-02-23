@@ -201,6 +201,11 @@ Creates detailed implementation plan OR refines existing plan using extended thi
 /dr-plan @plan-file summary
 ```
 
+**SUMMARY Mode - Generate and push to GitHub PR:**
+```bash
+/dr-plan @plan-file summary https://github.com/owner/repo/pull/123
+```
+
 **QUESTION RESOLUTION Mode - Answer Plan Questions:**
 ```bash
 /dr-plan @plan-file answer questions
@@ -235,12 +240,17 @@ Must support 10k concurrent WebSocket connections initially.
 
 **SUMMARY Examples:**
 ```bash
-# Generate PR summary for a completed plan
-/dr-plan @_claude/plans/completed/001-authentication-system.md summary
-
-# Generate PR summary for in-progress work
+# Generate PR summary for copying manually
 /dr-plan @_claude/plans/in_progress/003-database-migration.md summary
+
+# Generate and push summary directly to a GitHub PR
+/dr-plan @_claude/plans/in_progress/003-database-migration.md summary https://github.com/myorg/myrepo/pull/42
 ```
+When a PR URL is provided:
+- Validates the PR is open (blocks update on merged/closed PRs)
+- Prompts for confirmation if the PR already has a description
+- Sets the PR title to the commit message title and the description to the generated summary
+- Displays the full commit message (title + bullets) for your merge/squash commit
 
 **QUESTION RESOLUTION Examples:**
 ```bash
@@ -283,7 +293,9 @@ Must support 10k concurrent WebSocket connections initially.
 **SUMMARY Mode - What it does:**
 - **Generates PR summary**: Creates a GitHub-ready Pull Request description from the plan
 - **Creative formatting**: Uses tables, emojis, mermaid diagrams, and collapsible sections as appropriate
-- **Copyable output**: Wraps output in a code fence so you can copy the raw markdown
+- **Direct GitHub update**: Optionally pass a PR URL to push the summary directly to the PR via `gh pr edit`
+- **PR validation**: Checks the PR is open before updating; prompts before overwriting existing descriptions
+- **Copyable output**: Without a PR URL, wraps output in a code fence so you can copy the raw markdown
 - **Comprehensive content**: Includes summary, changes, test plan, and notes for reviewers
 
 **QUESTION RESOLUTION Mode - What it does:**
@@ -390,11 +402,15 @@ your-project/
 
 7. **PR Summary** (before or after completion)
    ```bash
+   # Display for manual copy
    /dr-plan @_claude/plans/in_progress/[plan-file].md summary
+
+   # Or push directly to a GitHub PR
+   /dr-plan @_claude/plans/in_progress/[plan-file].md summary https://github.com/owner/repo/pull/123
    ```
    - Generates GitHub-ready PR description
-   - Includes summary, changes, test plan, and notes
-   - Output is copyable markdown
+   - With a PR URL: updates the PR title and description directly
+   - Without a PR URL: output is copyable markdown
 
 8. **Completion Phase**
    ```bash
@@ -495,7 +511,7 @@ then switch over production traffic with blue-green deployment strategy.
 4. **Moving Plans**: Use `mv` command or ask Claude to move plans between draft/in_progress/completed folders
 5. **Git Tracking**: All documentation is markdown - commit plans and PRDs to version control
 6. **Idempotent Init**: Safe to run `/dr-init` multiple times - it won't duplicate files
-7. **PR Summaries**: Use `/dr-plan @plan.md summary` to generate copy-paste ready PR descriptions
+7. **PR Summaries**: Use `/dr-plan @plan.md summary` to generate PR descriptions, or add a PR URL to push directly to GitHub
 8. **Resolve Questions Early**: Use `/dr-plan @plan.md answer questions` to resolve blocking questions before implementation
 
 ## Contributing
