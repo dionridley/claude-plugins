@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MVP Build Summary — {{PROJECT_NAME}}</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-card: #1e293b;
+      --bg-card-hover: #334155;
+      --text-primary: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-green: #22c55e;
+      --accent-blue: #3b82f6;
+      --accent-red: #ef4444;
+      --accent-amber: #f59e0b;
+      --accent-purple: #a855f7;
+      --border: #334155;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .header .subtitle {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+    .header .meta {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-top: 1rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge-complete { background: rgba(34, 197, 94, 0.2); color: var(--accent-green); }
+    .badge-building { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); }
+    .badge-error { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
+
+    /* Grid */
+    .grid { display: grid; gap: 1.5rem; margin-bottom: 2rem; }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    @media (max-width: 768px) {
+      .grid-2, .grid-4 { grid-template-columns: 1fr; }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      border: 1px solid var(--border);
+    }
+    .card h2 {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+      font-weight: 500;
+    }
+
+    /* Stat Cards */
+    .stat-card {
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .stat-green .stat-value { color: var(--accent-green); }
+    .stat-blue .stat-value { color: var(--accent-blue); }
+    .stat-purple .stat-value { color: var(--accent-purple); }
+    .stat-amber .stat-value { color: var(--accent-amber); }
+
+    /* Progress Ring */
+    .progress-ring-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      padding: 1rem 0;
+    }
+    .progress-ring {
+      position: relative;
+      width: 160px;
+      height: 160px;
+    }
+    .progress-ring svg {
+      transform: rotate(-90deg);
+    }
+    .progress-ring circle {
+      fill: none;
+      stroke-width: 12;
+    }
+    .progress-ring .bg { stroke: var(--border); }
+    .progress-ring .fill {
+      stroke: var(--accent-green);
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s ease-out;
+    }
+    .progress-ring .percentage {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    /* Phase Bars */
+    .phase-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .phase-row:last-child { border-bottom: none; }
+    .phase-status {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .phase-status.complete { background: var(--accent-green); color: #000; }
+    .phase-status.in-progress { background: var(--accent-blue); color: #fff; }
+    .phase-status.pending { background: var(--border); color: var(--text-muted); }
+    .phase-status.error { background: var(--accent-red); color: #fff; }
+    .phase-name {
+      width: 200px;
+      flex-shrink: 0;
+      font-weight: 500;
+    }
+    .phase-bar-container {
+      flex: 1;
+      height: 24px;
+      background: var(--bg-primary);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      display: flex;
+    }
+    .phase-bar-fill {
+      height: 100%;
+      transition: width 1s ease-out;
+    }
+    .phase-bar-fill.completed { background: var(--accent-green); }
+    .phase-bar-fill.in-progress { background: var(--accent-blue); }
+    .phase-bar-fill.failed { background: var(--accent-red); }
+    .phase-tasks {
+      width: 80px;
+      text-align: right;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+    .phase-time {
+      width: 80px;
+      text-align: right;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    /* Time Comparison */
+    .time-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.5rem 0;
+    }
+    .time-label {
+      width: 200px;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+    .time-bars {
+      flex: 1;
+      position: relative;
+      height: 32px;
+    }
+    .time-bar {
+      position: absolute;
+      height: 14px;
+      border-radius: 4px;
+      transition: width 1s ease-out;
+    }
+    .time-bar.estimated {
+      top: 0;
+      background: rgba(59, 130, 246, 0.3);
+      border: 1px solid var(--accent-blue);
+    }
+    .time-bar.actual {
+      bottom: 0;
+      background: rgba(34, 197, 94, 0.3);
+      border: 1px solid var(--accent-green);
+    }
+    .time-legend {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .time-legend span::before {
+      content: '';
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+    .time-legend .est::before { background: rgba(59, 130, 246, 0.4); border: 1px solid var(--accent-blue); }
+    .time-legend .act::before { background: rgba(34, 197, 94, 0.4); border: 1px solid var(--accent-green); }
+
+    /* Session Timeline */
+    .session-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .session-item:last-child { border-bottom: none; }
+    .session-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .session-dot.start { background: var(--accent-purple); }
+    .session-dot.build { background: var(--accent-blue); }
+    .session-info { flex: 1; }
+    .session-mode {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .session-time { font-size: 0.85rem; color: var(--text-secondary); }
+    .session-tasks { color: var(--accent-green); font-weight: 600; }
+
+    /* Task Table */
+    .task-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    .task-table th {
+      text-align: left;
+      padding: 0.75rem;
+      border-bottom: 2px solid var(--border);
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+    .task-table td {
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+    .task-table tr:hover td { background: rgba(255, 255, 255, 0.02); }
+    .task-status-pill {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .task-status-pill.completed { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
+    .task-status-pill.failed { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+    .task-status-pill.pending { background: rgba(100, 116, 139, 0.15); color: var(--text-muted); }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* Section spacing */
+    .section { margin-bottom: 2rem; }
+    .section-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>{{PROJECT_NAME}}</h1>
+      <p class="subtitle">{{PROJECT_DESCRIPTION}}</p>
+      <div class="meta">
+        <span>Stack: {{STACK_NAME}}</span>
+        <span>Created: {{CREATED_AT}}</span>
+        <span class="badge badge-{{STATUS_CLASS}}">{{STATUS}}</span>
+      </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="grid grid-4 section">
+      <div class="card stat-card stat-green">
+        <div class="stat-value" id="stat-tasks">--</div>
+        <div class="stat-label">Tasks Completed</div>
+      </div>
+      <div class="card stat-card stat-blue">
+        <div class="stat-value" id="stat-agents">--</div>
+        <div class="stat-label">Agents Dispatched</div>
+      </div>
+      <div class="card stat-card stat-purple">
+        <div class="stat-value" id="stat-reviews">--</div>
+        <div class="stat-label">Reviews Passed</div>
+      </div>
+      <div class="card stat-card stat-amber">
+        <div class="stat-value" id="stat-time">--</div>
+        <div class="stat-label">Total Time</div>
+      </div>
+    </div>
+
+    <!-- Overall Progress + Phase Breakdown -->
+    <div class="grid grid-2 section">
+      <div class="card">
+        <h2>Overall Progress</h2>
+        <div class="progress-ring-container">
+          <div class="progress-ring">
+            <svg width="160" height="160">
+              <circle class="bg" cx="80" cy="80" r="68"></circle>
+              <circle class="fill" id="progress-fill" cx="80" cy="80" r="68"
+                stroke-dasharray="427.26" stroke-dashoffset="427.26"></circle>
+            </svg>
+            <div class="percentage" id="progress-pct">0%</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Phases</h2>
+        <div id="phase-list"></div>
+      </div>
+    </div>
+
+    <!-- Time Tracking -->
+    <div class="card section">
+      <h2>Time Tracking — Estimated vs Actual</h2>
+      <div class="time-legend">
+        <span class="est">Estimated</span>
+        <span class="act">Actual</span>
+      </div>
+      <div id="time-chart"></div>
+    </div>
+
+    <!-- Session Timeline -->
+    <div class="card section">
+      <h2>Session Timeline</h2>
+      <div id="session-timeline"></div>
+    </div>
+
+    <!-- Task Details -->
+    <div class="card section">
+      <h2>Task Details</h2>
+      <table class="task-table">
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th>Phase</th>
+            <th>Status</th>
+            <th>Agent</th>
+            <th>Review</th>
+            <th>Duration</th>
+          </tr>
+        </thead>
+        <tbody id="task-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>Generated by /mvp summary</p>
+      <p>Generated at: {{GENERATED_AT}}</p>
+    </div>
+  </div>
+
+  <!-- DATA INJECTION POINT — The /mvp summary command replaces this -->
+  <script>
+    const MVP_DATA = {{MVP_DATA_JSON}};
+  </script>
+
+  <script>
+    // Render functions
+    function formatDuration(minutes) {
+      if (!minutes && minutes !== 0) return '--';
+      if (minutes < 60) return Math.round(minutes) + 'm';
+      const h = Math.floor(minutes / 60);
+      const m = Math.round(minutes % 60);
+      return h + 'h ' + m + 'm';
+    }
+
+    function renderStats() {
+      const a = MVP_DATA.analytics;
+      document.getElementById('stat-tasks').textContent =
+        a.completedTasks + '/' + a.totalTasks;
+      document.getElementById('stat-agents').textContent =
+        a.agentSpawns.total;
+      document.getElementById('stat-reviews').textContent =
+        a.qualityReviews.passed + '/' + a.qualityReviews.total;
+
+      // Total time from sessions
+      let totalMinutes = 0;
+      (a.sessionLog || []).forEach(function(s) {
+        if (s.startedAt && s.endedAt) {
+          totalMinutes += (new Date(s.endedAt) - new Date(s.startedAt)) / 60000;
+        }
+      });
+      document.getElementById('stat-time').textContent = formatDuration(totalMinutes);
+    }
+
+    function renderProgress() {
+      const a = MVP_DATA.analytics;
+      const pct = a.totalTasks > 0 ? Math.round((a.completedTasks / a.totalTasks) * 100) : 0;
+      const circumference = 427.26;
+      const offset = circumference - (pct / 100) * circumference;
+
+      const fill = document.getElementById('progress-fill');
+      const label = document.getElementById('progress-pct');
+
+      requestAnimationFrame(function() {
+        fill.style.strokeDashoffset = offset;
+        label.textContent = pct + '%';
+      });
+    }
+
+    function renderPhases() {
+      const container = document.getElementById('phase-list');
+      const phases = MVP_DATA.phases || [];
+      let maxTasks = 1;
+      phases.forEach(function(p) { maxTasks = Math.max(maxTasks, p.tasks.length); });
+
+      phases.forEach(function(p) {
+        const completed = p.tasks.filter(function(t) { return t.status === 'completed'; }).length;
+        const failed = p.tasks.filter(function(t) { return t.status === 'failed'; }).length;
+        const total = p.tasks.length;
+        const pctComplete = total > 0 ? (completed / total) * 100 : 0;
+        const pctFailed = total > 0 ? (failed / total) * 100 : 0;
+
+        const statusClass = p.status === 'completed' ? 'complete'
+          : p.status === 'in_progress' ? 'in-progress'
+          : p.status === 'error' ? 'error' : 'pending';
+
+        const statusIcon = p.status === 'completed' ? '\u2713'
+          : p.status === 'in_progress' ? '\u25B6'
+          : p.status === 'error' ? '!' : '\u00B7';
+
+        const time = p.completedAt && p.startedAt
+          ? formatDuration((new Date(p.completedAt) - new Date(p.startedAt)) / 60000)
+          : '--';
+
+        const row = document.createElement('div');
+        row.className = 'phase-row';
+        row.innerHTML =
+          '<div class="phase-status ' + statusClass + '">' + statusIcon + '</div>' +
+          '<div class="phase-name">' + p.name + '</div>' +
+          '<div class="phase-bar-container">' +
+            '<div class="phase-bar-fill completed" style="width:' + pctComplete + '%"></div>' +
+            '<div class="phase-bar-fill failed" style="width:' + pctFailed + '%"></div>' +
+          '</div>' +
+          '<div class="phase-tasks">' + completed + '/' + total + '</div>' +
+          '<div class="phase-time">' + time + '</div>';
+        container.appendChild(row);
+      });
+    }
+
+    function renderTimeChart() {
+      const container = document.getElementById('time-chart');
+      const phases = MVP_DATA.phases || [];
+
+      // Find max time for scaling
+      let maxTime = 1;
+      phases.forEach(function(p) {
+        const est = p.estimatedMinutes || 0;
+        const act = p.completedAt && p.startedAt
+          ? (new Date(p.completedAt) - new Date(p.startedAt)) / 60000 : 0;
+        maxTime = Math.max(maxTime, est, act);
+      });
+
+      phases.forEach(function(p) {
+        const est = p.estimatedMinutes || 0;
+        const act = p.completedAt && p.startedAt
+          ? (new Date(p.completedAt) - new Date(p.startedAt)) / 60000 : 0;
+
+        const estPct = (est / maxTime) * 100;
+        const actPct = (act / maxTime) * 100;
+
+        const row = document.createElement('div');
+        row.className = 'time-row';
+        row.innerHTML =
+          '<div class="time-label">' + p.name + '</div>' +
+          '<div class="time-bars">' +
+            '<div class="time-bar estimated" style="width:' + estPct + '%"></div>' +
+            '<div class="time-bar actual" style="width:' + actPct + '%"></div>' +
+          '</div>';
+        container.appendChild(row);
+      });
+    }
+
+    function renderSessions() {
+      const container = document.getElementById('session-timeline');
+      var sessions = (MVP_DATA.analytics.sessionLog || []);
+
+      if (sessions.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted)">No sessions recorded.</p>';
+        return;
+      }
+
+      sessions.forEach(function(s) {
+        var duration = '--';
+        if (s.startedAt && s.endedAt) {
+          duration = formatDuration((new Date(s.endedAt) - new Date(s.startedAt)) / 60000);
+        }
+
+        var item = document.createElement('div');
+        item.className = 'session-item';
+        item.innerHTML =
+          '<div class="session-dot ' + s.mode + '"></div>' +
+          '<div class="session-info">' +
+            '<div class="session-mode">' + s.mode + ' session</div>' +
+            '<div class="session-time">' + (s.startedAt || '--') + '</div>' +
+          '</div>' +
+          '<div class="session-tasks">' + (s.tasksCompleted || 0) + ' tasks</div>' +
+          '<div style="color:var(--text-muted)">' + duration + '</div>';
+        container.appendChild(item);
+      });
+    }
+
+    function renderTasks() {
+      var tbody = document.getElementById('task-tbody');
+      var phases = MVP_DATA.phases || [];
+
+      phases.forEach(function(phase) {
+        (phase.tasks || []).forEach(function(task) {
+          var statusClass = task.status === 'completed' ? 'completed'
+            : task.status === 'failed' ? 'failed' : 'pending';
+
+          var agentId = task.agentSpawn ? '#' + task.agentSpawn.agentId : '--';
+          var review = task.qualityReview
+            ? (task.qualityReview.passed ? '\u2713 Pass' : '\u2717 Fail')
+            : '--';
+
+          var duration = '--';
+          if (task.startedAt && task.completedAt) {
+            duration = formatDuration(
+              (new Date(task.completedAt) - new Date(task.startedAt)) / 60000
+            );
+          }
+
+          var row = document.createElement('tr');
+          row.innerHTML =
+            '<td>' + task.name + '</td>' +
+            '<td>' + phase.name + '</td>' +
+            '<td><span class="task-status-pill ' + statusClass + '">' + task.status + '</span></td>' +
+            '<td>' + agentId + '</td>' +
+            '<td>' + review + '</td>' +
+            '<td>' + duration + '</td>';
+          tbody.appendChild(row);
+        });
+      });
+    }
+
+    // Initialize
+    renderStats();
+    renderProgress();
+    renderPhases();
+    renderTimeChart();
+    renderSessions();
+    renderTasks();
+  </script>
+</body>
+</html>
