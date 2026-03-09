@@ -1,8 +1,6 @@
 # TypeScript/React Conventions Reference
 
-This file is read by the `/mvp build` orchestrator at the start of each build session when the stack is JavaScript (Vite + TypeScript + React 19 + TailwindCSS 4).
-
-<!-- PLACEHOLDER: This file is intentionally minimal in v0.1.0. It will be populated with TypeScript/React-specific standing rules, anti-patterns, and code patterns as real builds surface common issues — mirroring the approach taken in conventions/elixir.md. -->
+This file is read by the `/mvp build` orchestrator at the start of each build session when the stack is JavaScript (Vite + TypeScript + React 19 + TailwindCSS 4). The contents are injected into every agent prompt under a `## TypeScript/React Conventions — MANDATORY` section.
 
 ---
 
@@ -18,6 +16,18 @@ Include this block verbatim in all TypeScript/React agent prompts:
 - ALWAYS read an existing file with the Read tool before modifying it
 - Only use Write directly for files that do not yet exist
 
+**`verbatimModuleSyntax` and `import type`:**
+- `tsconfig.json` uses `"verbatimModuleSyntax": true` — type-only exports are stripped at bundle time
+- ALWAYS import types and interfaces with `import type { ... }` — NEVER mix types into value imports
+- WRONG: `import { api, FormDetail, FormPage } from '../lib/api'`
+- CORRECT:
+  ```ts
+  import { api } from '../lib/api'
+  import type { FormDetail, FormPage } from '../lib/api'
+  ```
+- This applies to third-party libraries too — if a lib exports `export type Foo`, use `import type { Foo }`
+- Violating this causes a blank page at runtime with no obvious error (only visible in browser console)
+
 **Components:**
 - Use functional components only — no class components
 - Keep component files focused: one primary export per file
@@ -25,7 +35,7 @@ Include this block verbatim in all TypeScript/React agent prompts:
 
 **Navigation:**
 - Use React Router `<Link to="...">` and `useNavigate()` — never `window.location`
-- Use the `to` prop with relative paths where possible
+- Use slug-based URLs for all user-facing routes — UUID-based routes are for internal/admin use only
 
 **Forms:**
 - Use React 19 Form Actions and `useActionState` for form handling — not manual `useState` + handlers
@@ -39,6 +49,25 @@ Include this block verbatim in all TypeScript/React agent prompts:
 - Define schemas in `src/db/schema.ts`
 - Use `drizzle-kit push` to apply schema changes during development (no migration files needed)
 - Keep all DB access in `src/lib/db/` — never query directly from components
+- NEVER call database functions inside `.filter()`, `.map()`, or `.reduce()` callbacks — all DB calls must be at the top level of async functions
+
+**Seed data:**
+- Make all seed scripts idempotent — check for existence before inserting:
+  ```ts
+  const existing = db.select().from(schema.forms).where(eq(schema.forms.slug, 'my-form')).get()
+  if (!existing) { await db.insert(schema.forms).values(...) }
+  ```
+- Always seed complete child rows (e.g., seed `answers` when you seed `responses`) so related screens feel real during demos
+
+**API URL contracts:**
+- All API routes (method, path, purpose) must be defined in the brainstorm doc before any agent starts
+- The server agent and the API client agent MUST use the same paths — no improvising
+- Consider a `src/lib/routes.ts` constants file imported by both Express routes and the fetch client
+
+**Tidewave (app introspection):**
+- Tidewave MCP is available — use it to inspect the running application state
+- Use `mcp__tidewave__*` tools to verify DB contents, check API responses, and confirm server behavior
+- Do NOT read source files when Tidewave can answer the question directly
 ```
 
 ---
@@ -51,12 +80,92 @@ src/
   components/     # Shared UI components
   pages/          # Route-level page components
   lib/
+    api.ts        # Typed fetch client — all types must use `export type`
     db/           # Database access layer (Drizzle + SQLite)
+    routes.ts     # API route constants (shared by server and client)
   types/          # Shared TypeScript types
   index.css       # TailwindCSS 4 entry point (@import "tailwindcss")
   main.tsx        # React entry point
   App.tsx         # Router setup
+server/
+  index.ts        # Express server
+  db/
+    schema.ts     # Drizzle schema
+    seed.ts       # Seed script (must be idempotent)
 ```
+
+### Tidewave Setup
+
+Tidewave provides MCP-based introspection for the running application. Add during scaffold:
+
+```bash
+npm install @tidewave/tidewave
+```
+
+Add to `server/index.ts`:
+```ts
+import { createTidewaveMiddleware } from '@tidewave/tidewave'
+
+// Dev only
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/tidewave', createTidewaveMiddleware({ app }))
+}
+```
+
+### `api.ts` Pattern — `export type` Required
+
+Every type exported from `api.ts` must use `export type` so consumers know to use `import type`:
+
+```ts
+// src/lib/api.ts
+export type FormDetail = {
+  id: string
+  slug: string
+  title: string
+}
+
+export type FormPage = {
+  id: string
+  questions: Question[]
+}
+
+// Value export — imported normally
+export const api = {
+  forms: {
+    list: () => fetch('/api/forms').then(r => r.json()),
+    get: (slug: string) => fetch(`/api/forms/${slug}`).then(r => r.json()),
+  }
+}
+```
+
+Consumers:
+```ts
+import { api } from '../lib/api'
+import type { FormDetail, FormPage } from '../lib/api'
+```
+
+### Port Conflict Handling
+
+Before starting any dev process, kill stale processes on the target port:
+```bash
+lsof -ti:3001 | xargs kill -9 2>/dev/null; npx tsx server/index.ts &
+```
+
+Store the actual PID after start:
+```bash
+npx tsx server/index.ts & echo $! > .mvp/server.pid
+```
+
+At build session start, the main agent reads stored PIDs and kills stale processes before starting fresh ones.
+
+### Quality Gate: TypeScript Check After Each Agent Phase
+
+After every agent completes, run:
+```bash
+npx tsc --noEmit
+```
+
+Fix all type errors before the next phase begins. This catches `import type` violations, missing types, and dead code before they become runtime blank-page bugs.
 
 ### Vitest Test Patterns
 ```typescript
@@ -72,6 +181,14 @@ describe('things', () => {
 })
 ```
 
+### Playwright Smoke Test — First Steps
+
+When Playwright is available, always run these steps first in Phase 7:
+1. Navigate to the home route
+2. Immediately check `browser_console_messages` — a blank page always has console errors that point to the root cause
+3. Walk through the primary user flow once end-to-end
+4. Take a final screenshot as a build artifact
+
 ---
 
-<!-- More patterns will be added here as real builds surface common issues. -->
+<!-- Add new patterns here as real builds surface common issues. -->

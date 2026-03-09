@@ -24,7 +24,31 @@ You are executing the BUILD mode of the `/mvp` command. Your job is to:
 2. **Read `.mvp/[state.project.brainstormFile]`**
    - If missing: Show error and STOP
 
-3. **Record this session** in `analytics.sessionLog`:
+3. **Sweep stale subagent PIDs from previous sessions:**
+
+   For each entry in `state.processes.subagentPids` where `status == "running"`:
+
+   **Step 1 — verify the process is still ours before touching it:**
+   ```bash
+   ACTUAL=$(ps -p [pid] -o args= 2>/dev/null)
+   ```
+   Compare `$ACTUAL` against the stored `command` fragment. Only proceed if the actual running command contains the expected fragment (e.g. stored `"mix phx.server"` → check `$ACTUAL` contains `phx.server`; stored `"vite"` → check `$ACTUAL` contains `vite`).
+
+   - **If command does NOT match** (PID was recycled to an unrelated process):
+     - Update entry: `status: "recycled"`, `note: "PID recycled — skipped kill. Actual: [ACTUAL]"`
+     - Do NOT kill. Log a warning but continue.
+
+   - **If command DOES match** (process still ours):
+     ```bash
+     kill [pid] 2>/dev/null
+     sleep 1
+     ps -p [pid] > /dev/null 2>&1 || echo "confirmed stopped"
+     ```
+     Update entry: `status: "stopped"`, `stoppedAt: now`, `note: "killed on session start — stale from prior session"`
+
+   Write `state.json` after the full sweep.
+
+4. **Record this session** in `analytics.sessionLog`:
    ```json
    {
      "sessionId": "build-[N]",
@@ -49,25 +73,134 @@ Store the **"Mandatory Rules for Every Agent"** block from that file. You will i
 
 ## Phase 2: Ensure Dev Server
 
-The main agent (you) handles the dev server — never delegate this to subagents.
+The main agent (you) handles dev server concerns — never delegate this to subagents.
 
-1. **Check if server is running:**
+Read `state.project.serverManagement` and follow the appropriate path:
+
+---
+
+### If `serverManagement == "user"` (User-managed)
+
+Show this prompt to the user and wait:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Start your dev server
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Please start the dev server in a separate terminal:
+
+  Elixir:     mix phx.server
+  JavaScript: npm run dev  (in one terminal)
+              npm run server  (in a second terminal for Express)
+
+  Press Enter / reply "ready" when the server is running.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Once the user confirms, verify with curl:
+```bash
+/usr/bin/curl -s -o /dev/null -w "%{http_code}" http://localhost:[state.project.port] 2>/dev/null
+```
+
+If not responding: ask the user to check the server output. Do NOT attempt to start it yourself.
+
+**When a server restart is needed** (config change, new dependency, migration):
+Show this message and wait for confirmation:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Server restart required
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Reason: [e.g. "new dependency added to mix.exs" /
+           "config/dev.exs changed" / "migration run"]
+
+  Please restart the server in your terminal (Ctrl+C, then
+  re-run the start command), then reply "ready".
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+---
+
+### If `serverManagement == "agent"` (Agent-managed)
+
+**Show this warning before starting any processes:**
+
+For Elixir stack:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Process safety notice — Elixir stack
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  This build will start and stop `mix phx.server` processes.
+  Process identity is verified by command name before any kill.
+
+  However, if you have OTHER Phoenix applications running
+  locally (from other projects), they share the same process
+  name. If a PID is recycled to one of those processes it
+  could be affected.
+
+  Recommendation: stop other Phoenix servers before continuing.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+For JavaScript stack:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Process safety notice — JavaScript stack
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  This build will start and stop `vite` and `tsx` processes.
+  Process identity is verified by command name before any kill.
+
+  However, if you have OTHER Vite or Express/tsx applications
+  running locally (from other projects), they share the same
+  process names. If a PID is recycled to one of those
+  processes it could be affected.
+
+  Recommendation: stop other Vite/Node servers before continuing.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+1. **Kill previously stored dev server PID only** (never kill by port):
+   If `state.processes.devServer.pid` is set from a prior session, verify and kill:
    ```bash
-   /usr/bin/curl -s -o /dev/null -w "%{http_code}" http://localhost:[state.project.port] 2>/dev/null
+   ACTUAL=$(ps -p [stored-pid] -o args= 2>/dev/null)
+   # Elixir: check contains "phx.server"
+   # JS: check contains "vite" or "tsx"
+   if echo "$ACTUAL" | grep -q "[expected-fragment]"; then
+     kill [stored-pid] 2>/dev/null && sleep 1
+   else
+     echo "Stored PID [pid] is '$ACTUAL' — not ours, skipping"
+   fi
    ```
 
-2. **If not running, start it:**
+2. **Start the server:**
    ```bash
    # Elixir
-   cd [projectDir] && PORT=[port] mix phx.server &
+   PORT=[port] mix phx.server &
+   DEV_PID=$!
 
-   # JS
-   cd [projectDir] && npm run dev -- --port [port] &
+   # JS — start both Vite and Express
+   npm run dev -- --port [port] &
+   VITE_PID=$!
+   npm run server &
+   EXPRESS_PID=$!
    ```
-   - Capture the PID, store in `state.processes.devServer`
-   - Retry the curl check up to 5 times (2s sleep between attempts)
+   Store PIDs and their command fragments in `state.processes.devServer` and `state.processes.expressServer`:
+   ```json
+   { "pid": 12345, "port": 4000, "command": "mix phx.server" }
+   ```
+   Retry the curl check up to 5 times (2s sleep between attempts).
 
 3. **If server fails to start:** Set `status: "error"`, update `resumePoint.notes`, write `state.json`, and STOP.
+
+**When a server restart is needed** (config change, new dependency, migration):
+Verify the stored PID is still ours, then kill and restart:
+```bash
+ACTUAL=$(ps -p [stored-pid] -o args= 2>/dev/null)
+if echo "$ACTUAL" | grep -q "[expected-fragment]"; then
+  kill [stored-pid] 2>/dev/null && sleep 2
+fi
+# re-run start command, capture new PID, update state.json
+```
 
 ---
 
@@ -440,7 +573,12 @@ For each delegatable task:
    - Do NOT modify .mvp/ files
    - Do NOT modify package.json or mix.exs
    - ALWAYS read a file before modifying it
-   - If you start any background processes, report their PIDs
+   - If you must start a background process (e.g. a test runner or watcher):
+     - Record its PID immediately after starting: `echo $!`
+     - Stop it before returning: `kill [pid] 2>/dev/null && sleep 1`
+     - Confirm it is stopped: `ps -p [pid] > /dev/null 2>&1 || echo "confirmed stopped"`
+     - Report it in `processesStarted` with `stopped: true`
+     - NEVER leave a background process running when you return
 
    ## Expected Output — MANDATORY JSON FORMAT
    ```json
@@ -451,7 +589,14 @@ For each delegatable task:
      "filesModified": ["relative/path"],
      "filesCreated": ["relative/path"],
      "dependenciesNeeded": [],
-     "processesStarted": [],
+     "processesStarted": [
+       {
+         "pid": 12345,
+         "command": "human-readable description",
+         "stopped": true,
+         "note": "started for X, stopped after Y"
+       }
+     ],
      "issues": [],
      "notes": "any context for the main agent"
    }
@@ -470,7 +615,29 @@ As each agent returns:
 
 1. Parse JSON result
 2. **Handle `dependenciesNeeded`:** install them (main agent only), then run `mix deps.get` or `npm install`
-3. **Handle `processesStarted`:** record PIDs in `state.json`
+3. **Handle `processesStarted`:** for each entry in the array:
+   - Append to `state.processes.subagentPids`:
+     ```json
+     {
+       "pid": [pid],
+       "command": "[command]",
+       "taskId": "[task id]",
+       "agentId": [agent id],
+       "startedAt": "[agent startedAt]",
+       "status": "running",
+       "stoppedAt": null
+     }
+     ```
+   - Check if the agent already stopped it (`stopped: true`):
+     - If yes: verify with `ps -p [pid] > /dev/null 2>&1 || echo "gone"`, update status to `"stopped"`, set `stoppedAt: now`
+     - If no (agent failed to stop it): verify command then kill:
+       ```bash
+       ACTUAL=$(ps -p [pid] -o args= 2>/dev/null)
+       # verify ACTUAL contains the stored command fragment before killing
+       ```
+       If command matches: kill, update status to `"stopped"`, note `"force-killed by main agent — subagent did not stop"`
+       If command does NOT match: update status to `"recycled"`, note `"PID recycled before cleanup — actual: [ACTUAL]"`, do NOT kill
+   - Write `state.json` after processing all PIDs
 4. **Release locks**
 5. Update task in `state.json`:
    - `status`: from result
@@ -573,9 +740,19 @@ After each agent batch:
 
 When all tasks in the current phase are completed or failed:
 
-1. Run the phase gate check (see Phase 4 for gate definitions)
-2. If gate fails: attempt fix, or mark as error and ask user
-3. If gate passes:
+1. **Sweep subagent PIDs for this phase** — final safety check:
+   - Filter `state.processes.subagentPids` where `taskId` belongs to the current phase and `status == "running"`
+   - For each: verify command matches stored fragment before killing:
+     ```bash
+     ACTUAL=$(ps -p [pid] -o args= 2>/dev/null)
+     # only kill if ACTUAL contains stored command fragment
+     ```
+   - If matches: kill, mark `"stopped"`. If not: mark `"recycled"`, skip kill.
+   - Write `state.json`
+
+2. Run the phase gate check (see Phase 4 for gate definitions)
+3. If gate fails: attempt fix, or mark as error and ask user
+4. If gate passes:
    - Set phase `status: "completed"`, set `completedAt`
    - Calculate actual time
    - Git commit (phase boundary):
@@ -612,10 +789,28 @@ Close session log entry (`endedAt`, `tasksCompleted`). Tell user: "Run /mvp buil
 
 When all phases complete:
 
-1. **Kill dev server:**
+1. **Final process sweep — kill everything:**
+
+   Kill the dev server:
    ```bash
    kill [state.processes.devServer.pid] 2>/dev/null
+   kill [state.processes.expressServer.pid] 2>/dev/null
    ```
+
+   Kill any remaining subagent PIDs still marked `"running"`, with command verification:
+   ```bash
+   # For each pid in state.processes.subagentPids where status == "running":
+   ACTUAL=$(ps -p [pid] -o args= 2>/dev/null)
+   if echo "$ACTUAL" | grep -q "[stored-command-fragment]"; then
+     kill [pid] 2>/dev/null
+     # mark "stopped"
+   else
+     # mark "recycled", skip kill
+   fi
+   ```
+
+   Also verify and kill dev/express server PIDs the same way — check command matches before killing.
+   Write `state.json`.
 
 2. **Final test run:**
    ```bash

@@ -32,6 +32,8 @@ Include this block verbatim in all Elixir agent prompts:
 **Flash messages:**
 - Flash is handled by `root.html.heex` — do NOT add `<.flash_group>` inside individual LiveView renders
 - `put_flash/3` calls will display automatically via the root layout
+- In Phoenix 1.8.x, `flash_group` lives in `MyAppWeb.Layouts`, NOT in `CoreComponents` — it is not auto-imported into LiveViews
+- If you need to render flash manually: `alias MyAppWeb.Layouts` and call `<Layouts.flash_group flash={@flash} />`
 
 **Navigation:**
 - Use `~p"/path/#{id}"` verified route sigil for ALL internal paths — never hardcoded strings
@@ -48,11 +50,49 @@ Include this block verbatim in all Elixir agent prompts:
 **Seed data:**
 - Faker is available: `Faker.Person.name()`, `Faker.Internet.email()`, `Faker.Lorem.paragraph(2..3)`
 - Make seeds idempotent: delete-then-insert so re-running doesn't error
+
+**Swoosh email config:**
+- ALWAYS add the following to `config/dev.exs` and `config/test.exs` at scaffold time to avoid hackney errors:
+  - `dev.exs`: `config :swoosh, :api_client, false`
+  - `test.exs`: `config :swoosh, :api_client, false` and `config :my_app, MyApp.Mailer, adapter: Swoosh.Adapters.Test`
+- Omitting this causes `mix phx.server` and `mix test` to fail if hackney is not installed
+
+**Compiler warnings:**
+- ALWAYS run `mix compile` after writing or modifying a module and check for warnings, not just errors
+- Do NOT add `@doc` before multiple clauses of the same function — only the first clause should have `@doc`
+- Quality review must treat compiler warnings as failures
+
+**Changing `signed_in_path`:**
+- When changing the post-login redirect (e.g., from `~p"/"` to `~p"/dashboard"`), do a targeted search for redirect assertions in tests
+- Categorize: tests that follow `signed_in_path` (update) vs. tests that assert hardcoded paths like logout's `~p"/"` (leave alone)
+- Do this as a single targeted pass — never a global find-replace
+
+**Tidewave (app introspection):**
+- Tidewave MCP is installed as a dev dependency — use it to query live app state instead of reading source files
+- Use `mcp__tidewave__*` tools to: check what records exist in the database, verify seeds ran correctly, call context functions, and inspect LiveView assigns
+- Do NOT run raw SQL or read source files when Tidewave can answer the question directly
 ```
 
 ---
 
 ## Phoenix 1.8 Environment Reference
+
+### Tidewave Setup
+
+Add to `mix.exs` during scaffold (dev-only):
+```elixir
+{:tidewave, "~> 0.1", only: :dev}
+```
+
+Add to `lib/[slug]_web/router.ex` inside the `dev_routes` block:
+```elixir
+if Application.compile_env(:my_app, :dev_routes) do
+  scope "/tidewave" do
+    pipe_through :browser
+    forward "/", Tidewave
+  end
+end
+```
 
 ### What Ships by Default in Phoenix 1.8
 - **DaisyUI 5.x** — `assets/vendor/daisyui.js`, use component classes: `btn`, `card`, `badge`, `modal`, `alert`, `input`, `select`, etc.

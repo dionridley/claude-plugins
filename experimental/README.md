@@ -37,9 +37,17 @@ Autonomous MVP builder that brainstorms, scaffolds, and builds web app prototype
 - OTP >= 25 (required for asset downloads)
 - Mix + Hex (`mix local.hex`)
 
+### Getting Started
+
+Create and enter your project folder before running `/mvp start` — the scaffold runs in the current directory:
+
+```bash
+mkdir my-app && cd my-app && claude
+```
+
 ## How It Works
 
-1. **`/mvp start`** — Interactive brainstorming session that captures your app idea, bounds scope to 3-5 screens and 1 core user flow, asks about Playwright E2E testing, checks prerequisites, scaffolds the project, and creates a `.mvp/` directory with a brainstorm document and state file.
+1. **`/mvp start`** — Interactive setup that captures your app idea, bounds scope to 3-5 screens and 1 core user flow, asks about Playwright E2E testing and dev server management preference, checks prerequisites, scaffolds the project into the current directory, and writes `.mcp.json` and `.claude/settings.local.json` so Claude Code has the right tools and permissions pre-approved. After setup, restart Claude Code with the provided `--resume` command to load the MCP servers.
 
 2. **`/mvp build`** — Builds the prototype autonomously across 7 phases. Loads stack conventions at session start, identifies the next batch of tasks, dispatches parallel agents, runs quality reviews, and auto-commits to git at each checkpoint. Pauses at phase boundaries for user review. Picks up from saved state if prior progress exists.
 
@@ -72,6 +80,22 @@ All state is persisted in a `.mvp/` directory in your project root:
 └── resources/       # Downloaded assets (images, etc.)
 ```
 
+## Dev Server Management
+
+Chosen during `/mvp start` and respected throughout the build:
+
+- **User-managed (recommended)** — you run the server in a separate terminal; Claude tells you when to restart (after config changes, new dependencies, migrations)
+- **Agent-managed** — Claude starts and stops the server automatically for a fully autonomous build
+
+## Auto-Configured Project Settings
+
+`/mvp start` writes two files into your project before the first build session:
+
+- **`.mcp.json`** — configures Tidewave (app introspection) and Playwright (browser testing) MCP servers
+- **`.claude/settings.local.json`** — pre-approves all tool permissions needed for the build so you aren't prompted repeatedly
+
+Restart Claude Code after `/mvp start` completes (use the `--resume` flag shown at the end) to load these settings.
+
 ## Agent Orchestration
 
 The build orchestrator uses a main agent that coordinates subagents:
@@ -81,10 +105,11 @@ The build orchestrator uses a main agent that coordinates subagents:
 - **Quality review agents** verify each completed task before it's committed; low-risk tasks (README, CSS appends) skip this step
 - **Lock-based concurrency** prevents conflicts on shared resources (migrations, design, dependencies)
 - **Worktree isolation** (`isolation: "worktree"`) is the default for agents touching more than 2 files
+- **PID lifecycle tracking** — all background processes started by subagents are tracked, verified by command name, and swept clean at phase boundaries and session start
 
 ## Stack Conventions
 
-Stack-specific standing rules are stored in `commands/mvp/conventions/` and injected into every agent prompt:
+Stack-specific standing rules stored in `commands/mvp/conventions/` and injected into every agent prompt:
 
-- `conventions/elixir.md` — Phoenix 1.8 rules, LiveView patterns, DaisyUI reference, test/factory patterns
-- `conventions/typescript.md` — TypeScript/React 19 rules (expanded over time as builds surface new patterns)
+- `conventions/elixir.md` — Phoenix 1.8 rules, LiveView patterns, DaisyUI reference, test/factory patterns, Tidewave usage
+- `conventions/typescript.md` — TypeScript/React 19 rules including `verbatimModuleSyntax`/`import type`, API contract patterns, Drizzle, Tidewave, Playwright smoke test guidance

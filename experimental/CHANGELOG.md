@@ -5,6 +5,32 @@ All notable changes to the Experimental plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-03-09
+
+### Added
+- **Auto-configured MCP servers** — `/mvp start` writes `.mcp.json` and `.claude/settings.local.json` into the project directory automatically; no manual Claude Code settings required
+  - Tidewave MCP (`mcp__tidewave__*`) configured for both Elixir and JavaScript stacks
+  - Playwright MCP (`@playwright/mcp@latest --isolated --caps=vision`) configured when E2E testing is opted in
+- **Stack permissions files** — `commands/mvp/settings/elixir.json` and `commands/mvp/settings/typescript.json` define all required tool permissions written to new projects at setup time
+- **Server management choice** — `/mvp start` now asks whether the dev server should be agent-managed (fully autonomous) or user-managed (user runs server in a separate terminal; agent instructs when to restart). Stored in `state.json` and respected throughout the build.
+- **Tidewave in TypeScript scaffold** — `@tidewave/tidewave` installed, Express middleware wired up, MCP server available at `/tidewave`
+- **Prescriptive TypeScript server structure** — scaffold now creates `server/index.ts`, `server/db/schema.ts`, `server/db/client.ts`, `server/db/seed.ts`, and `server/lib/routes.ts` (shared API route constants used by both Express and the fetch client to prevent URL mismatches)
+- **Playwright browser binaries installed at setup** — `npx playwright install chromium` runs during scaffold if Playwright is opted in; restart-and-resume instructions shown at completion
+- **Swoosh hackney fix as a concrete scaffold step** — `config/dev.exs` and `config/test.exs` patched at Elixir scaffold time; previously convention-only
+- **Tidewave added to Elixir scaffold** — `{:tidewave, "~> 0.1", only: :dev}` and router setup added as scaffold steps
+- **Process safety warnings** — agent-managed builds show a per-stack warning at session start about same-name process collision risk (`mix phx.server`, `vite`, `tsx`)
+- **Command verification before all process kills** — every kill operation now checks `ps -p [pid] -o args=` against the stored command fragment; PIDs recycled to unrelated processes are marked `"recycled"` and skipped rather than killed
+- **Subagent PID lifecycle tracking** — `state.processes.subagentPids` tracks every background process started by a subagent with full start/stop metadata; swept at session start, phase completion, and build completion
+- **`--resume` flag instructions** — completion message now tells users to copy the resume command before restarting Claude Code so they can continue the conversation with full context
+
+### Changed
+- Projects now scaffold into the current directory (using `.`) instead of creating a subdirectory — matches expected workflow of `mkdir my-app && cd my-app && claude`
+- Playwright question updated to reflect automatic MCP configuration; "requires manual setup" caveat removed
+- `lsof -ti:[port] | xargs kill` pattern removed entirely from agent-managed server startup; replaced with PID-based kill with command verification
+- `typescript-conventions.md` fully fleshed out — `verbatimModuleSyntax`/`import type` rule (blank-page prevention), DB-in-callbacks prohibition, `npx tsc --noEmit` quality gate, idempotent seed pattern, API URL contract rule, port handling, Tidewave setup, Playwright smoke test guidance
+- `elixir-conventions.md` expanded — Swoosh config rule, `flash_group` Layouts import rule, compiler warnings as failures, `signed_in_path` test update rule, Tidewave usage rule
+- Convention files reorganised into `commands/mvp/conventions/` folder; filenames simplified to `elixir.md` and `typescript.md`
+
 ## [0.2.0] - 2026-03-08
 
 ### Added
