@@ -4,6 +4,7 @@
 **Stack:** {{STACK_NAME}}
 **Status:** {{STATUS}}
 **Last Updated:** {{UPDATED_AT}}
+**Playwright E2E:** {{PLAYWRIGHT_ENABLED}}
 
 ---
 
@@ -20,6 +21,7 @@
 | 1 | App Type | Web Application | {{APP_TYPE_RATIONALE}} | {{CREATED_AT}} |
 | 2 | Tech Stack | {{STACK_NAME}} | {{STACK_RATIONALE}} | {{CREATED_AT}} |
 | 3 | Core Flow | {{CORE_FLOW_NAME}} | {{CORE_FLOW_RATIONALE}} | {{CREATED_AT}} |
+| 4 | E2E Testing | {{PLAYWRIGHT_ENABLED}} | {{PLAYWRIGHT_RATIONALE}} | {{CREATED_AT}} |
 
 ---
 
@@ -71,47 +73,67 @@
 - [ ] Project initialization ({{SCAFFOLD_COMMAND}})
 - [ ] Install core dependencies
 - [ ] Configure {{STACK_SHORT}} project settings
-- [ ] Set up routing structure
+- [ ] Set up routing structure with placeholder pages/LiveViews
 - [ ] Create base layout component
-- [ ] Verify dev server starts clean
+- [ ] Verify dev server starts and compiles assets cleanly
 
-**Gate:** Dev server starts and renders base route without errors.
+**Gate:** Dev server starts, assets compile, base route renders without errors.
 
 ### Phase 2: Data Layer & Schema
 **Estimated:** 15-20 min
 
 - [ ] Define data models / schemas
-- [ ] Create database migrations
+- [ ] Write migration files
 - [ ] Run migrations
-- [ ] Create seed data
+- [ ] Create realistic seed data (using Faker/factory helpers)
 - [ ] Verify data layer compiles and seeds load
 
-**Gate:** Database created, migrations run, seed data loads successfully.
+**Gate:** Database created, migrations run cleanly, seed data loads successfully.
 
-### Phase 3: Core Feature — {{CORE_FEATURE_NAME}}
+### Phase 3: Test Scaffolding
+**Estimated:** 15-20 min
+
+- [ ] Create test factory / data helpers
+- [ ] Write unit tests for each context / data module (happy path)
+- [ ] Verify all tests pass before proceeding
+
+**Gate:** `mix test` / `npm test` passes with 0 failures. All context/data functions have test coverage.
+
+### Phase 4: Design Brief
+**Estimated:** 5-10 min
+
+- [ ] Generate design brief for this specific app using frontend-design skill
+- [ ] Save design brief to `.mvp/research/design-brief.md`
+- [ ] Define color palette, typography, component patterns, and visual tone
+
+**Gate:** Design brief exists at `.mvp/research/design-brief.md` and is populated.
+
+### Phase 5: Core Feature — {{CORE_FEATURE_NAME}}
 **Estimated:** 30-45 min
 
 {{CORE_FEATURE_TASKS}}
 
-**Gate:** Core user flow works end-to-end.
+**Gate:** Core user flow works end-to-end.{{PLAYWRIGHT_GATE}}
 
-### Phase 4: UI Polish & Remaining Screens
+### Phase 6: UI Polish & Remaining Screens
 **Estimated:** 20-30 min
 
 {{UI_POLISH_TASKS}}
 
 **Gate:** All screens render, navigation works between all routes.
 
-### Phase 5: Integration & Smoke Test
-**Estimated:** 10-15 min
+### Phase 7: Integration & Smoke Test
+**Estimated:** 15-25 min
 
 - [ ] End-to-end flow verification
+- [ ] Write LiveView / component interaction tests for each screen
 - [ ] Fix broken connections between components
+- [ ] Run full test suite — must pass with 0 failures
 - [ ] Final visual polish and responsive check
 - [ ] Write README with run instructions
 - [ ] Clean up unused boilerplate
 
-**Gate:** Full user flow works, app starts cleanly, README is accurate.
+**Gate:** `mix test` / `npm test` passes with 0 failures, full user flow works, README is accurate.
 
 ---
 
@@ -149,9 +171,11 @@
 |-------|-----------|--------|---------|-----------|
 | 1. Scaffold | 10-15 min | -- | -- | -- |
 | 2. Data Layer | 15-20 min | -- | -- | -- |
-| 3. Core Feature | 30-45 min | -- | -- | -- |
-| 4. UI Polish | 20-30 min | -- | -- | -- |
-| 5. Integration | 10-15 min | -- | -- | -- |
+| 3. Test Scaffolding | 15-20 min | -- | -- | -- |
+| 4. Design Brief | 5-10 min | -- | -- | -- |
+| 5. Core Feature | 30-45 min | -- | -- | -- |
+| 6. UI Polish | 20-30 min | -- | -- | -- |
+| 7. Integration | 15-25 min | -- | -- | -- |
 
 ---
 
@@ -165,7 +189,7 @@
 - **Completed:** [timestamp]
 - **Duration:** [Xm Ys]
 - **Files:** [list of files modified/created]
-- **Quality Review:** PASS / FAIL
+- **Quality Review:** PASS / FAIL / SKIPPED (low-risk)
 - **Notes:** [any relevant details]
 -->
 
