@@ -47,6 +47,12 @@ Include this block verbatim in all Elixir agent prompts:
 - ALWAYS read an existing file with the Read tool before modifying it
 - Only use Write directly for files that do not yet exist
 
+**Paths and working directory:**
+- NEVER use absolute paths — no `/Users/...`, no `~/...`
+- ALWAYS use relative paths: `lib/my_app/things.ex`, `priv/repo/migrations/...`
+- You are already in the project root — do NOT `cd` to absolute paths
+- If a command must run in a subdirectory, use `cd subdir && command` with a relative path only
+
 **Seed data:**
 - Faker is available: `Faker.Person.name()`, `Faker.Internet.email()`, `Faker.Lorem.paragraph(2..3)`
 - Make seeds idempotent: delete-then-insert so re-running doesn't error

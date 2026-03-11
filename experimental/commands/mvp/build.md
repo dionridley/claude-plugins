@@ -10,6 +10,13 @@ You are executing the BUILD mode of the `/mvp` command. Your job is to:
 3. Enforce testing, design quality, and browser testing gates
 4. Maintain accurate state and brainstorm document throughout
 
+**Working directory — CRITICAL:**
+The project root is your current working directory for the entire session. You MUST follow these rules in every command you run and every agent prompt you write:
+- **NEVER use absolute paths** — no `/Users/...`, no `~/...`, no `$(pwd)/...`
+- **ALWAYS use relative paths** — `src/index.ts`, `lib/my_app/things.ex`, `.mvp/state.json`
+- **NEVER `cd` to an absolute path** — if a command must run in a subdirectory, use `cd subdir && command` with a relative path only
+- **You are already in the project root** — do not `cd` to the project directory itself
+
 ---
 
 ## Phase 1: Load State and Conventions
@@ -285,10 +292,10 @@ For **seed data agents** (Elixir), include in the prompt:
 **Gate — MANDATORY:**
 ```bash
 # Elixir
-cd [projectDir] && mix test
+mix test
 
 # JS
-cd [projectDir] && npm test
+npm test
 ```
 
 **`mix test` / `npm test` MUST pass with 0 failures before this phase is marked complete.** If tests fail:
@@ -487,17 +494,17 @@ Parallelizable by screen (each screen is independent).
 1. Run the full test suite and fix any failures:
    ```bash
    # Elixir
-   cd [projectDir] && mix test
+   mix test
 
    # JS
-   cd [projectDir] && npm test
+   npm test
    ```
    If failures exist, fix them (you or a targeted agent) and re-run. Do NOT skip this.
 
 2. Attempt a production build to catch any remaining issues:
    ```bash
    # JS only
-   cd [projectDir] && npm run build
+   npm run build
    ```
 
 **Delegatable tasks (one agent each):**
@@ -527,7 +534,7 @@ Execute directly. After each:
 2. Check checkbox in brainstorm.md
 3. Git commit:
    ```bash
-   cd [projectDir] && git add -A && git commit -m "mvp: [task description]"
+   git add -A && git commit -m "mvp: [task description]"
    ```
 4. Increment `analytics.completedTasks`, `analytics.gitCommits`
 5. Write `state.json` immediately
@@ -573,6 +580,7 @@ For each delegatable task:
    - Do NOT modify .mvp/ files
    - Do NOT modify package.json or mix.exs
    - ALWAYS read a file before modifying it
+   - **NEVER use absolute paths** — all file paths must be relative to the project root (e.g. `src/index.ts` not `/Users/.../src/index.ts`). Do NOT use `cd` with absolute paths.
    - If you must start a background process (e.g. a test runner or watcher):
      - Record its PID immediately after starting: `echo $!`
      - Stop it before returning: `kill [pid] 2>/dev/null && sleep 1`
@@ -706,7 +714,7 @@ FAIL = critical issues that must be fixed first.
 - Check off task in brainstorm.md
 - Git commit the agent's files:
   ```bash
-  cd [projectDir] && git add [specific files] && git commit -m "mvp: [task description]"
+  git add [specific files] && git commit -m "mvp: [task description]"
   ```
 - Increment `analytics.qualityReviews.passed`, `analytics.completedTasks`, `analytics.gitCommits`
 - Write `state.json`
@@ -814,7 +822,7 @@ When all phases complete:
 
 2. **Final test run:**
    ```bash
-   cd [projectDir] && mix test   # or npm test
+   mix test   # or npm test
    ```
    Record result in analytics.
 
@@ -841,7 +849,6 @@ When all phases complete:
    Total time:       [calculated across sessions]
 
    To run the app:
-     cd [projectDir]
      [npm run dev | PORT=[port] mix phx.server]
      Open http://localhost:[port]
 

@@ -6,10 +6,13 @@ This file is read by the main `mvp.md` router when the user runs `/mvp start` or
 
 You are executing the START mode of the `/mvp` command. Your job is to:
 1. Brainstorm an app idea with the user and lock in scope
-2. Ask about Playwright E2E testing preference
+2. Ask about Playwright E2E testing preference and server management preference
 3. Check prerequisites for the chosen stack
-4. Scaffold the project with all fixes and patches applied
-5. Create the `.mvp/` state directory with brainstorm doc and state file
+4. Write tool permissions to `.claude/settings.local.json` and pause for a Claude Code restart
+5. After restart: scaffold the project with all fixes and patches applied
+6. Write `.mcp.json` and finalize `.mvp/` state directory
+
+**Two-session flow:** Setup runs across two Claude Code sessions separated by a required restart. Phase 4 writes permissions and saves brainstorm state, then stops. After restart with `--resume`, `/mvp start` detects the saved state and jumps directly to Phase 5 (scaffold) without re-asking questions.
 
 ---
 
@@ -18,7 +21,13 @@ You are executing the START mode of the `/mvp` command. Your job is to:
 Before anything else, check if `.mvp/state.json` already exists in the current directory.
 
 1. **Try to read `.mvp/state.json`:**
-   - If it EXISTS and has valid content:
+   - If it EXISTS and `status == "awaiting_scaffold"`:
+     - Settings were written before a required restart. Scaffold hasn't run yet.
+     - Show: "Permissions loaded. Resuming setup for [name] — continuing to scaffold."
+     - Read all stored brainstorm values from state.json (stack, port, playwrightEnabled, serverManagement, etc.)
+     - **Jump directly to Phase 5** — skip brainstorming and prerequisites entirely.
+
+   - If it EXISTS and status is anything else (building, complete, error):
      - Read it to get the project name and status
      - Use AskUserQuestion:
        - **Question:**
@@ -277,11 +286,83 @@ All prerequisites met!
 
 ---
 
-## Phase 4: Create .mvp/ Directory
+## Phase 4: Write Settings and Restart
+
+Settings must be loaded before scaffolding begins — they pre-approve the shell permissions that `npm create`, `mix phx.new`, `git`, and other scaffold commands need. Write them now, then restart Claude Code to load them.
+
+### 1. Create .mvp/ directory
 
 ```bash
 mkdir -p .mvp/agent-logs .mvp/research .mvp/resources
 ```
+
+### 2. Write `.claude/settings.local.json`
+
+Read the appropriate baseline permissions file:
+- **Elixir:** Read `${CLAUDE_PLUGIN_ROOT}/commands/mvp/settings/elixir.json`
+- **JS:** Read `${CLAUDE_PLUGIN_ROOT}/commands/mvp/settings/typescript.json`
+
+Write contents verbatim to `.claude/settings.local.json`.
+
+### 3. Write partial `state.json`
+
+Write `.mvp/state.json` with `status: "awaiting_scaffold"` so Phase 1 can resume after restart:
+
+```json
+{
+  "version": "1.1.0",
+  "project": {
+    "name": "[App Name]",
+    "slug": "[slug]",
+    "description": "[One-line description]",
+    "stack": "js|elixir",
+    "port": [chosen-port],
+    "expressPort": [expressPort],
+    "brainstormFile": "brainstorm.md",
+    "projectDir": ".",
+    "playwrightEnabled": true|false,
+    "serverManagement": "user|agent",
+    "createdAt": "[ISO timestamp]",
+    "updatedAt": "[ISO timestamp]"
+  },
+  "status": "awaiting_scaffold",
+  "brainstormData": {
+    "vision": "[vision description]",
+    "screens": [...],
+    "coreFlow": "[core flow description]",
+    "inScope": [...],
+    "outOfScope": [...]
+  }
+}
+```
+
+### 4. Show restart message and STOP
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Restart required to load permissions
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Tool permissions have been written to:
+    .claude/settings.local.json
+
+  These take effect when Claude Code restarts. Without
+  this restart, scaffold commands (git, npm/mix, file
+  operations) will each prompt for approval individually.
+
+  Before you exit:
+    Copy the --resume command shown below.
+
+  To continue:
+    1. Copy the resume command (shown by Claude Code on exit)
+    2. claude --resume <session-id>
+    3. Run: /mvp start
+
+  Claude will detect the saved state and jump straight
+  to scaffolding — no need to answer questions again.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**STOP here.** Do not proceed to Phase 5 until the user has restarted and re-run `/mvp start`.
 
 ---
 
@@ -317,17 +398,28 @@ npm install -D @types/better-sqlite3 @types/express @types/cors drizzle-kit tsx
 # Install Tailwind for Vite
 npm install -D tailwindcss @tailwindcss/vite
 
-# Install Tidewave for dev-time app introspection
-npm install --save-dev @tidewave/tidewave
+# Install Tidewave for dev-time app introspection (package name is just "tidewave")
+npm install --save-dev tidewave
 ```
 
-Set up TailwindCSS 4:
+Set up TailwindCSS 4 and Tidewave Vite plugin:
 1. Read `src/index.css` and prepend `@import "tailwindcss";`
-2. Read `vite.config.ts` and add the Tailwind plugin:
+2. Read `vite.config.ts` and add both the Tailwind and Tidewave plugins:
    ```typescript
+   import { defineConfig } from 'vite'
+   import react from '@vitejs/plugin-react'
    import tailwindcss from '@tailwindcss/vite'
-   // add tailwindcss() to plugins array
+   import tidewave from 'tidewave/vite'
+
+   export default defineConfig({
+     plugins: [
+       react(),
+       tailwindcss(),
+       tidewave(),   // dev-only introspection MCP server
+     ],
+   })
    ```
+   Note: Tidewave's Vite plugin only activates in dev mode and is a no-op in production builds.
 
 Install Vitest for testing:
 ```bash
@@ -354,13 +446,6 @@ const PORT = Number(process.env.PORT) || 3001
 app.use(cors({ origin: 'http://localhost:5173' }))
 app.use(express.json())
 
-// Tidewave introspection endpoint (dev only)
-if (process.env.NODE_ENV !== 'production') {
-  import('@tidewave/tidewave').then(({ createTidewaveMiddleware }) => {
-    app.use('/tidewave', createTidewaveMiddleware())
-  })
-}
-
 // TODO: mount route files here
 // import { formsRouter } from './routes/forms'
 // app.use('/api/forms', formsRouter)
@@ -371,6 +456,7 @@ app.listen(PORT, () => {
 
 export { app }
 ```
+Note: Tidewave runs as a standalone stdio MCP server (`npx tidewave mcp`) — it does not need Express middleware.
 
 Write `server/db/schema.ts` (placeholder — build agents fill in the real schema):
 ```typescript
@@ -429,9 +515,36 @@ lsof -i :3001 | grep LISTEN
 ```
 If port 3001 is occupied, store `expressPort: 3002` in state; otherwise `expressPort: 3001`.
 
-**If Playwright is enabled, install browser binaries:**
+**If Playwright is enabled, check installation and install only what is missing:**
 ```bash
-npx playwright install chromium
+# Check if Playwright CLI is available
+PLAYWRIGHT_VERSION=$(npx playwright --version 2>/dev/null)
+
+if [ -n "$PLAYWRIGHT_VERSION" ]; then
+  echo "[x] Playwright already installed ($PLAYWRIGHT_VERSION)"
+  # Check if Chromium browser binary is present
+  CHROMIUM_PATH=$(npx playwright show-browser-path chromium 2>/dev/null)
+  if [ -n "$CHROMIUM_PATH" ] && [ -d "$CHROMIUM_PATH" ]; then
+    echo "[x] Chromium browser binary already installed"
+  else
+    echo "[ ] Chromium binary missing — installing..."
+    npx playwright install chromium
+  fi
+else
+  echo "[ ] Playwright not found — installing Playwright and Chromium..."
+  npx playwright install chromium
+fi
+```
+
+Show the result in the prerequisite checklist:
+```
+  [x] Playwright (1.x.x) — already installed
+  [x] Chromium — already installed
+```
+or:
+```
+  [ ] Playwright — installed now
+  [ ] Chromium — installed now
 ```
 
 Verify the Vite dev server starts:
@@ -551,9 +664,21 @@ config :swoosh, :api_client, false
 config :[app], [App].Mailer, adapter: Swoosh.Adapters.Test
 ```
 
-**14. If Playwright is enabled, install browser binaries:**
+**14. If Playwright is enabled, install browser binaries (check first):**
 ```bash
-npx playwright install chromium
+PLAYWRIGHT_VERSION=$(npx playwright --version 2>/dev/null)
+# Check if already installed
+if [ -n "$PLAYWRIGHT_VERSION" ]; then
+  echo "[x] Playwright already installed ($PLAYWRIGHT_VERSION)"
+  CHROMIUM_PATH=$(npx playwright show-browser-path chromium 2>/dev/null)
+  if [ -n "$CHROMIUM_PATH" ] && [ -d "$CHROMIUM_PATH" ]; then
+    echo "[x] Chromium browser binary already installed"
+  else
+    npx playwright install chromium
+  fi
+else
+  npx playwright install chromium
+fi
 ```
 
 **15. Verify compilation:**
@@ -573,23 +698,13 @@ kill $SERVER_PID 2>/dev/null
 
 ---
 
-## Phase 5b: Configure Project Settings and MCP Servers
+## Phase 5b: Write `.mcp.json`
 
-This phase writes two files into the project directory so Claude Code loads the right permissions and MCP servers when the user reopens this project.
+Settings were already written in Phase 4. This phase writes only the MCP server configuration, which depends on the port determined during scaffold.
 
-### 1. Write `.claude/settings.local.json`
+Write `.mcp.json` in the current directory:
 
-Read the appropriate baseline permissions file for the chosen stack:
-- **Elixir:** Read `${CLAUDE_PLUGIN_ROOT}/commands/mvp/settings/elixir.json`
-- **JS:** Read `${CLAUDE_PLUGIN_ROOT}/commands/mvp/settings/typescript.json`
-
-Write the contents verbatim to `.claude/settings.local.json` (in the current directory).
-
-### 2. Write `.mcp.json`
-
-Write `.mcp.json` (in the current directory) with Tidewave (served by the app) and Playwright (standalone):
-
-**For Elixir stack:**
+**For Elixir stack** (Tidewave served by Phoenix over SSE):
 ```json
 {
   "mcpServers": {
@@ -605,13 +720,13 @@ Write `.mcp.json` (in the current directory) with Tidewave (served by the app) a
 }
 ```
 
-**For JavaScript stack:**
+**For JavaScript stack** (Tidewave runs as a standalone stdio process via the Vite plugin):
 ```json
 {
   "mcpServers": {
     "tidewave": {
-      "type": "sse",
-      "url": "http://localhost:3001/tidewave"
+      "command": "npx",
+      "args": ["tidewave", "mcp"]
     },
     "playwright": {
       "command": "npx",
@@ -621,7 +736,8 @@ Write `.mcp.json` (in the current directory) with Tidewave (served by the app) a
 }
 ```
 
-> Note: The `tidewave` MCP server requires the app server to be running to respond. It will be available once `/mvp build` starts the dev server. Playwright connects independently and is available immediately.
+> Tidewave for Elixir is served by the running Phoenix app — it won't respond until `mix phx.server` is running.
+> Tidewave for JavaScript runs as a standalone stdio process in the project directory — available as soon as Claude Code restarts.
 
 ---
 

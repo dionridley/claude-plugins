@@ -16,6 +16,12 @@ Include this block verbatim in all TypeScript/React agent prompts:
 - ALWAYS read an existing file with the Read tool before modifying it
 - Only use Write directly for files that do not yet exist
 
+**Paths and working directory:**
+- NEVER use absolute paths — no `/Users/...`, no `~/...`
+- ALWAYS use relative paths: `src/pages/Home.tsx`, `server/db/schema.ts`
+- You are already in the project root — do NOT `cd` to absolute paths
+- If a command must run in a subdirectory, use `cd subdir && command` with a relative path only
+
 **`verbatimModuleSyntax` and `import type`:**
 - `tsconfig.json` uses `"verbatimModuleSyntax": true` — type-only exports are stripped at bundle time
 - ALWAYS import types and interfaces with `import type { ... }` — NEVER mix types into value imports
