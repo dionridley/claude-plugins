@@ -55,7 +55,87 @@ The project root is your current working directory for the entire session. You M
 
    Write `state.json` after the full sweep.
 
-4. **Record this session** in `analytics.sessionLog`:
+4. **Port health check** — before starting anything, verify the ports in state.json are free:
+
+   ```bash
+   # JS stack: check both Express and Vite ports
+   lsof -i :[state.project.expressPort] | grep LISTEN
+   lsof -i :[state.project.port] | grep LISTEN
+
+   # Elixir stack: check Phoenix port
+   lsof -i :[state.project.port] | grep LISTEN
+   ```
+
+   For each occupied port:
+   - Check if the occupying PID matches a stored PID in `state.processes` with command verification (it may be our own stale process from the previous session):
+     ```bash
+     ACTUAL=$(ps -p [occupying-pid] -o args= 2>/dev/null)
+     # if ACTUAL matches stored command fragment → kill it with verification, then continue
+     ```
+   - If the occupying PID is **unknown** (not in our stored processes), **STOP**:
+     ```
+     ⚠️  Port [port] is occupied by an unknown process: [process name / PID]
+
+     This may be a stale process from a previous MVP session or another
+     application using the same port.
+
+     To view details:   lsof -i :[port]
+     To stop it:        kill [pid]
+
+     Resolve this conflict, then run /mvp build again.
+     ```
+
+5. **Git repository check** — worktree isolation requires an initialized repo. Verify before any agents run:
+
+   ```bash
+   git rev-parse --git-dir 2>/dev/null
+   ```
+
+   - If the command **succeeds**: git is initialized — continue.
+   - If it **fails** (not a git repo): initialize now and make a baseline commit so worktree isolation works:
+     ```bash
+     git init
+     git add -A
+     git commit -m "mvp: initialize git (recovery — /mvp start may have been interrupted)"
+     ```
+     Log a warning in `resumePoint.notes`: "git was not initialized at build start — initialized by build session recovery."
+
+6. **Context reconstruction** — output a "where we are" summary before proceeding. This bootstraps your working context from files so the build can continue cleanly even after context compaction:
+
+   Read in order:
+   - `state.json` (already loaded above)
+   - `.mvp/[brainstormFile]` (already loaded above)
+   - The 3 most recent files in `.mvp/agent-logs/` (sorted by modification time):
+     ```bash
+     ls -t .mvp/agent-logs/*.json 2>/dev/null | head -3
+     ```
+
+   Then output this summary block **to the conversation** (not to a file):
+   ```
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     Build context — [App Name] ([stack])
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     Phase:     [current phase name] ([X]/7)
+     Progress:  [completedTasks]/[totalTasks] tasks
+     Sessions:  [N] prior sessions
+
+     Last completed: [resumePoint.lastCompletedTask]
+     Next action:    [resumePoint.nextAction]
+
+     Recent files changed:
+       [list from resumePoint.recentFilesChanged]
+
+     Open issues:
+       [list from resumePoint.openIssues, or "None"]
+
+     Recent agent activity:
+       [for each of the 3 most recent agent logs: agent ID, task name, status, key files]
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ```
+
+   This summary is your working context for the session. Read the recently changed files listed before dispatching agents that touch related areas.
+
+7. **Record this session** in `analytics.sessionLog`:
    ```json
    {
      "sessionId": "build-[N]",
@@ -438,6 +518,12 @@ Navigate to [route] and verify:
 3. [Core interaction — e.g. "Fill in the title field, click Save, verify redirect"]
 4. [Another interaction]
 
+**Empty state test (mandatory):**
+5. Navigate to this screen when there is no data (delete or use a fresh state if needed). Verify a meaningful empty state is shown — not a blank page, not a loading spinner that never resolves, not a console error.
+
+**Error path test (mandatory):**
+6. Attempt an action that should fail or produce feedback (e.g. submit an empty required form, click a disabled action, trigger a validation error). Verify VISIBLE feedback appears — error message, toast, inline validation. A silent no-op is a FAIL.
+
 Take a screenshot after each major step.
 
 ## On Failure
@@ -480,7 +566,7 @@ Parallelizable by screen (each screen is independent).
 - Include design brief excerpt in each agent prompt
 - One agent per remaining screen
 - One additional agent for global responsive/accessibility polish if needed
-- Do NOT run browser tests for every polish task — reserve for screens with significant changes
+- **Run per-screen browser tests** (same as `core` phase) for every new screen built in this phase — use the same browser test agent template including empty state and error path steps
 
 **Gate:** All screens render, all routes navigable, no broken imports.
 
@@ -689,8 +775,17 @@ You are a Quality Review Agent for MVP: [App Name]
    - Imports resolve correctly?
    - Exports match what callers expect?
 4. Run compile check:
-   - Elixir: `mix compile` (check for errors/warnings)
-   - JS: look for TypeScript type errors in the modified files
+   - Elixir: `mix compile` (treat warnings as failures — the conventions require it)
+   - JS: run the typecheck script:
+     ```bash
+     npm run typecheck
+     ```
+     (`tsc --noEmit` — catches type errors that Vite's dev server silently ignores. Any error is a FAIL.)
+5. **Silent failure check** (for any task involving UI or user interaction):
+   - Read every event handler, form submission, and button action in the modified files
+   - For each: does it produce VISIBLE feedback on both success AND failure paths?
+   - Flag as FAIL if any handler: returns early without feedback, catches an error silently, or has a code path where the user clicks/submits and nothing visibly changes
+   - Examples of silent failure: `if (!page) return` with no toast/message, `catch (e) {}` with no error display, a toggle that updates state but shows no confirmation
 
 ## Expected Output — MANDATORY JSON
 ```json
@@ -725,7 +820,7 @@ FAIL = critical issues that must be fixed first.
 - If `retryCount >= 3`: set task to "failed", increment `analytics.failedTasks`, warn user and skip
 - Write `state.json`
 
-### Step E: Update brainstorm document
+### Step E: Update brainstorm document and write agent log
 
 After each agent batch:
 1. Update Task Tracking section (recalculate counts)
@@ -744,6 +839,42 @@ After each agent batch:
    - **Notes:** [agent + review notes]
    ```
 
+4. **Write structured agent log to `.mvp/agent-logs/[agent-id].json`:**
+   ```json
+   {
+     "agentId": "[ID]",
+     "taskId": "[task id]",
+     "taskName": "[task description]",
+     "phase": "[phase id]",
+     "sessionId": "[current session id]",
+     "startedAt": "[timestamp]",
+     "completedAt": "[timestamp]",
+     "status": "success|partial|failed",
+     "filesModified": ["relative/path"],
+     "filesCreated": ["relative/path"],
+     "qualityReview": "pass|fail|skipped",
+     "browserTest": "pass|fail|n/a",
+     "issues": [],
+     "decisions": [],
+     "notes": "[any context useful for future sessions]"
+   }
+   ```
+   The `decisions` field is important — record any non-obvious choices made (e.g. "used optimistic updates because the API is slow", "skipped validation on X because seed data handles it"). These are the details lost when context compacts.
+
+5. **Update `resumePoint`** after every completed task:
+   ```json
+   {
+     "phaseId": "[current phase]",
+     "taskId": "[next pending task id, or null if phase complete]",
+     "nextAction": "[one sentence: what should happen next — specific enough to act on without reading the full brainstorm]",
+     "lastCompletedTask": "[task name just finished]",
+     "recentFilesChanged": ["[up to 5 most recently modified files]"],
+     "openIssues": ["[any known blockers, partial failures, or decisions deferred]"],
+     "notes": "[any context a fresh session needs that isn't obvious from state.json]",
+     "lastCompletedAt": "[ISO timestamp]"
+   }
+   ```
+
 ### Step F: Check phase completion and gate
 
 When all tasks in the current phase are completed or failed:
@@ -760,7 +891,54 @@ When all tasks in the current phase are completed or failed:
 
 2. Run the phase gate check (see Phase 4 for gate definitions)
 3. If gate fails: attempt fix, or mark as error and ask user
-4. If gate passes:
+4. **If the completed phase is `core` or `polish` and `state.project.playwrightEnabled == true`:** run a regression smoke test before marking the phase complete:
+
+   Dispatch a browser test agent with this prompt:
+   ```
+   You are a Regression Smoke Test Agent for MVP: [App Name]
+   Stack: [stack]
+   Server is running at: http://localhost:[port]
+
+   ## Goal
+   Walk the complete core user flow end-to-end and verify nothing is broken.
+   This is a regression check — screens built in earlier phases may have been
+   affected by work done in this phase.
+
+   ## Core User Flow
+   [Paste the core flow description from the brainstorm document]
+
+   ## All Screens
+   [List every screen with its route]
+
+   ## Test Script
+   1. Navigate to the home/entry route — verify it loads without errors
+   2. Walk the core user flow step by step:
+      [Expand each step from the brainstorm core flow into concrete actions]
+   3. Navigate to every other screen — verify each renders without a blank page or console error
+   4. Check browser console for errors after each navigation — any uncaught error is a FAIL
+
+   Take a screenshot after each screen.
+
+   ## Expected Output — MANDATORY FORMAT
+   ```json
+   {
+     "phase": "[core|polish]",
+     "verdict": "PASS|FAIL",
+     "screens": [
+       {"screen": "name", "route": "/path", "result": "pass|fail", "notes": "..."}
+     ],
+     "consoleErrors": [],
+     "regressions": ["description of anything broken that was previously working"],
+     "screenshotPaths": []
+   }
+   ```
+   ```
+
+   - If PASS: proceed to mark phase complete
+   - If FAIL: fix regressions before marking the phase complete (treat same as a gate failure)
+   - Update `analytics.browserTests` with results
+
+5. If gate passes:
    - Set phase `status: "completed"`, set `completedAt`
    - Calculate actual time
    - Git commit (phase boundary):
@@ -779,7 +957,25 @@ Session checkpoint — Phase [N] complete.
 Progress: [X]/[Total] tasks  |  [N] agents  |  [time] elapsed
 ```
 
-Close session log entry (`endedAt`, `tasksCompleted`). Tell user: "Run /mvp build to continue."
+Close session log entry (`endedAt`, `tasksCompleted`).
+
+**If `serverManagement == "agent"` and any processes were started this session**, print a cleanup reference block:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Session pausing — active processes
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Processes started this session:
+
+    kill [pid]  # [command] (port [port])
+    kill [pid]  # [command] (port [port])
+
+  These will be swept automatically when you run
+  /mvp build again. If you need to stop them now,
+  use the commands above.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Tell user: "Run /mvp build to continue."
 
 ---
 
@@ -861,6 +1057,21 @@ When all phases complete:
    Generate analytics page:
      /mvp summary
    ```
+
+**If `serverManagement == "agent"`**, print a process cleanup block listing every process started across the entire build (from `state.processes` and `state.processes.subagentPids`):
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Process cleanup reference
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  All processes started during this build (for your records):
+
+    kill [pid]  # [command] — port [port] — [stopped|running]
+    kill [pid]  # [command] — port [port] — [stopped|running]
+
+  All processes above have been stopped. If any remain
+  running, use the kill commands above to clean up.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
 
 ---
 

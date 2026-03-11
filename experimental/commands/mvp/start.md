@@ -204,6 +204,38 @@ Missing prerequisites! Install before continuing:
   Node.js / npm: https://nodejs.org  or  nvm: https://github.com/nvm-sh/nvm
 ```
 
+**4. Check port availability:**
+```bash
+lsof -i :3500 | grep LISTEN
+lsof -i :3600 | grep LISTEN
+```
+
+If either port is occupied, **STOP**:
+```
+Port [3500|3600] is in use by: [process name / PID]
+
+MVP uses port 3500 (Express API) and 3600 (Vite frontend) to avoid
+conflicts with standard framework defaults (3001 and 5173).
+
+To view what's using the port:   lsof -i :[port]
+To stop it:                      kill [pid]
+
+Resolve this conflict, then re-run /mvp start.
+```
+
+Update the checklist:
+```
+Prerequisite Check — JavaScript Stack:
+
+  [x] node (v20.11.0) — requires >= 18
+  [x] npm (v10.2.4)
+  [x] npx (v10.2.4)
+  [x] port 3500 (Express) available
+  [x] port 3600 (Vite) available
+
+All prerequisites met!
+```
+
 ### For Elixir Stack:
 
 Run in sequence:
@@ -264,13 +296,23 @@ If hex is missing, auto-install: `mix local.hex --force`
 
 **3. Check port availability:**
 ```bash
-lsof -i :4000 | grep LISTEN
+lsof -i :4500 | grep LISTEN
 ```
 
-If port 4000 is occupied:
-- Tell the user: "Port 4000 is in use. I'll configure the app to use port 4001 instead."
-- Store `port: 4001` to use throughout the scaffold
-- Otherwise store `port: 4000`
+If port 4500 is occupied, **STOP**:
+```
+Port 4500 is in use by: [process name / PID]
+
+MVP uses port 4500 for Phoenix to avoid conflicts with the standard
+Phoenix default (4000) used by other local Phoenix applications.
+
+To view what's using the port:   lsof -i :4500
+To stop it:                      kill [pid]
+
+Resolve this conflict, then re-run /mvp start.
+```
+
+Store `port: 4500` in state.
 
 Show the full checklist:
 ```
@@ -279,7 +321,7 @@ Prerequisite Check — Elixir Stack:
   [x] elixir (1.18.1) — OTP 27 (>= OTP 25 required)
   [x] mix (1.18.1)
   [x] hex (2.0.0)
-  [x] port 4000 available
+  [x] port 4500 available
 
 All prerequisites met!
 ```
@@ -290,10 +332,16 @@ All prerequisites met!
 
 Settings must be loaded before scaffolding begins — they pre-approve the shell permissions that `npm create`, `mix phx.new`, `git`, and other scaffold commands need. Write them now, then restart Claude Code to load them.
 
-### 1. Create .mvp/ directory
+### 1. Create .mvp/ directory and initialize git
 
 ```bash
 mkdir -p .mvp/agent-logs .mvp/research .mvp/resources
+```
+
+Initialize git now — worktree isolation (`isolation: "worktree"`) used by build agents requires an initialized repo. Doing it here ensures it's in place before any agents run, even if the session is interrupted between `/mvp start` and `/mvp build`.
+
+```bash
+git rev-parse --git-dir 2>/dev/null || git init
 ```
 
 ### 2. Write `.claude/settings.local.json`
@@ -385,8 +433,12 @@ For Elixir, also derive the underscored module name from the slug (e.g., `my-app
 Run sequentially:
 
 ```bash
-# Create Vite project in the current directory
-npm create vite@latest . -- --template react-ts
+# Scaffold into a named subdirectory (avoids the "directory not empty" TTY prompt
+# that blocks automation when .mvp/ already exists in the current directory)
+npm create vite@latest [slug] -- --template react-ts
+
+# Move all scaffold files up to the current directory and remove the subdirectory
+cp -r [slug]/. . && rm -rf [slug]
 
 # Install dependencies
 npm install
@@ -404,22 +456,28 @@ npm install --save-dev tidewave
 
 Set up TailwindCSS 4 and Tidewave Vite plugin:
 1. Read `src/index.css` and prepend `@import "tailwindcss";`
-2. Read `vite.config.ts` and add both the Tailwind and Tidewave plugins:
+2. **Overwrite `vite.config.ts` entirely** with the following (do NOT read-and-edit — the scaffolded file imports from `'vite'` which breaks the Vitest `test` block; `'vitest/config'` must be the import source):
    ```typescript
-   import { defineConfig } from 'vite'
+   import { defineConfig } from 'vitest/config'
    import react from '@vitejs/plugin-react'
    import tailwindcss from '@tailwindcss/vite'
-   import tidewave from 'tidewave/vite'
+   import tidewave from 'tidewave/vite-plugin'
 
    export default defineConfig({
      plugins: [
        react(),
        tailwindcss(),
-       tidewave(),   // dev-only introspection MCP server
+       tidewave(),   // dev-only introspection MCP server — no-op in production
      ],
+     test: {
+       environment: 'jsdom',
+       include: ['src/**/*.{test,spec}.{ts,tsx}'],
+     },
    })
    ```
-   Note: Tidewave's Vite plugin only activates in dev mode and is a no-op in production builds.
+   **Why `vitest/config` not `vite`:** Adding a `test` block to a config that imports from `'vite'` causes a TypeScript error (`'test' does not exist in type 'UserConfigExport'`) that only surfaces during `tsc -b` / production build — not during `npm run dev`. Importing from `'vitest/config'` provides the extended type that includes the `test` key.
+
+   **Why `tidewave/vite-plugin` not `tidewave/vite`:** The correct subpath export for the Tidewave Vite plugin is `tidewave/vite-plugin`. Using `tidewave/vite` causes `Missing "./vite" specifier` at build time.
 
 Install Vitest for testing:
 ```bash
@@ -430,6 +488,7 @@ Add scripts to `package.json`:
 ```json
 "test": "vitest run",
 "test:watch": "vitest",
+"typecheck": "tsc --noEmit",
 "server": "tsx watch server/index.ts"
 ```
 
@@ -441,9 +500,9 @@ import express from 'express'
 import cors from 'cors'
 
 const app = express()
-const PORT = Number(process.env.PORT) || 3001
+const PORT = Number(process.env.PORT) || 3500
 
-app.use(cors({ origin: 'http://localhost:5173' }))
+app.use(cors({ origin: 'http://localhost:3600' }))
 app.use(express.json())
 
 // TODO: mount route files here
@@ -509,11 +568,7 @@ export const ROUTES = {
 } as const
 ```
 
-**Check Express port availability:**
-```bash
-lsof -i :3001 | grep LISTEN
-```
-If port 3001 is occupied, store `expressPort: 3002` in state; otherwise `expressPort: 3001`.
+Store `expressPort: 3500` in state — this port was verified available in Phase 3.
 
 **If Playwright is enabled, check installation and install only what is missing:**
 ```bash
@@ -549,10 +604,10 @@ or:
 
 Verify the Vite dev server starts:
 ```bash
-npm run dev -- --port 5173 &
+npm run dev -- --port 3600 &
 DEV_PID=$!
 sleep 4
-/usr/bin/curl -s -o /dev/null -w "%{http_code}" http://localhost:5173
+/usr/bin/curl -s -o /dev/null -w "%{http_code}" http://localhost:3600
 kill $DEV_PID 2>/dev/null
 ```
 
@@ -567,15 +622,16 @@ Run sequentially:
 mix archive.install hex phx_new --force
 ```
 
-**2. Create project in the current directory (always use `--no-install`):**
+**2. Scaffold into a named subdirectory, then move files up:**
 ```bash
-mix phx.new . --live --no-mailer --no-dashboard --database sqlite3 --no-install
+mix phx.new [slug] --live --no-mailer --no-dashboard --database sqlite3 --no-install
+cp -r [slug]/. . && rm -rf [slug]
 ```
 
-The `.` creates the project in the current directory. Phoenix uses the directory name as the app name.
-The `--no-install` flag prevents an interactive `[Yn]` prompt that blocks automation.
+Using a named subdirectory avoids the "directory already exists" interactive prompt that blocks automation when `.mvp/` is already present. The `--no-install` flag prevents the `[Yn]` dependency prompt. After the copy, all scaffold files are in the current directory exactly as if `mix phx.new .` had worked.
 
-**3. `.tool-versions` is already in the correct place** — it was created in the current directory during Phase 3. No move needed.
+**3. Move `.tool-versions` back to project root if needed:**
+The `.tool-versions` file was created in the current directory during Phase 3. After the copy-up it should still be in the right place — verify it exists at `.tool-versions` (not inside a subdirectory).
 
 **4. Install dependencies:**
 ```bash
@@ -633,9 +689,9 @@ end
 ```
 
 **10. Set port in `config/dev.exs`:**
-If port 4001 was chosen in Phase 3, read `config/dev.exs` and update the endpoint config:
+Read `config/dev.exs` and update the endpoint config to use port 4500:
 ```elixir
-http: [ip: {127, 0, 0, 1}, port: 4001],
+http: [ip: {127, 0, 0, 1}, port: 4500],
 ```
 
 **11. Apply scaffold patches to `lib/[app]_web/components/layouts/root.html.heex`:**
@@ -689,10 +745,10 @@ If compile fails, fix the errors before proceeding.
 
 **16. Verify dev server starts and assets compile:**
 ```bash
-PORT=[chosen-port] mix phx.server &
+PORT=4500 mix phx.server &
 SERVER_PID=$!
 sleep 6
-/usr/bin/curl -s -o /dev/null -w "%{http_code}" http://localhost:[chosen-port]
+/usr/bin/curl -s -o /dev/null -w "%{http_code}" http://localhost:4500
 kill $SERVER_PID 2>/dev/null
 ```
 
@@ -741,19 +797,12 @@ Write `.mcp.json` in the current directory:
 
 ---
 
-## Phase 6: Initialize Git
+## Phase 6: Initial Commit
 
-If the current directory is not already a git repo:
-```bash
-git init
-```
-
-Then commit the initial state:
+Git was initialized in Phase 4. Commit the full scaffold now:
 ```bash
 git add -A && git commit -m "mvp: initialize [project-name] with [stack]"
 ```
-
-If it IS already a git repo, ensure the initial scaffold is committed.
 
 ---
 
@@ -786,12 +835,12 @@ Create `.mvp/state.json`:
     "slug": "[slug]",
     "description": "[One-line description]",
     "stack": "js|elixir",
-    "port": 4000,
+    "port": 4500,
     "brainstormFile": "brainstorm.md",
     "projectDir": ".",
     "playwrightEnabled": true|false,
     "serverManagement": "user|agent",
-    "expressPort": 3001,
+    "expressPort": 3500,
     "createdAt": "[ISO timestamp]",
     "updatedAt": "[ISO timestamp]"
   },
@@ -800,6 +849,10 @@ Create `.mvp/state.json`:
   "resumePoint": {
     "phaseId": "scaffold",
     "taskId": null,
+    "nextAction": "Begin Phase 1 scaffold tasks",
+    "lastCompletedTask": null,
+    "recentFilesChanged": [],
+    "openIssues": [],
     "notes": "Ready to begin Phase 1 tasks",
     "lastCompletedAt": null
   },

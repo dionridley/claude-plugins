@@ -150,19 +150,15 @@ import { api } from '../lib/api'
 import type { FormDetail, FormPage } from '../lib/api'
 ```
 
-### Port Conflict Handling
+### Port Reference
 
-Before starting any dev process, kill stale processes on the target port:
-```bash
-lsof -ti:3001 | xargs kill -9 2>/dev/null; npx tsx server/index.ts &
-```
+MVP uses non-default ports to avoid conflicts with other running applications:
+- **Express API:** port `3500` (default is 3001 — too common)
+- **Vite frontend:** port `3600` (default is 5173 — too common)
 
-Store the actual PID after start:
-```bash
-npx tsx server/index.ts & echo $! > .mvp/server.pid
-```
+Always read ports from `state.json` — do NOT hardcode port numbers in application code. The server template uses `process.env.PORT || 3500` so the port can be overridden via environment variable.
 
-At build session start, the main agent reads stored PIDs and kills stale processes before starting fresh ones.
+At build session start, the main agent checks that these ports are free and reads stored PIDs to clean up any stale processes from previous sessions. Never kill processes by port (`lsof -ti:[port] | xargs kill`) — this kills by port regardless of ownership and can affect other applications.
 
 ### Quality Gate: TypeScript Check After Each Agent Phase
 
