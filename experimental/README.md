@@ -49,7 +49,7 @@ mkdir my-app && cd my-app && claude
 
 1. **`/mvp start`** — Interactive setup that captures your app idea, bounds scope to 3-5 screens and 1 core user flow, asks about Playwright E2E testing and dev server management preference, checks prerequisites, scaffolds the project into the current directory, and writes `.mcp.json` and `.claude/settings.local.json` so Claude Code has the right tools and permissions pre-approved. After setup, restart Claude Code with the provided `--resume` command to load the MCP servers.
 
-2. **`/mvp build`** — Builds the prototype autonomously across 7 phases. Loads stack conventions at session start, identifies the next batch of tasks, dispatches parallel agents, runs quality reviews, and auto-commits to git at each checkpoint. Pauses at phase boundaries for user review. Picks up from saved state if prior progress exists.
+2. **`/mvp build`** — Builds the prototype autonomously across 8 phases. Loads stack conventions at session start, identifies the next batch of tasks, dispatches parallel agents, runs quality reviews, and auto-commits to git at each checkpoint. Pauses at phase boundaries for user review. Picks up from saved state if prior progress exists.
 
 3. **`/mvp status`** — Displays a terminal-friendly dashboard showing phase progress, task counts, agent statistics, and elapsed time.
 
@@ -63,9 +63,10 @@ mkdir my-app && cd my-app && claude
 | 2 | Data Layer | Schemas, migrations, seed data |
 | 3 | Test Scaffolding | Unit tests for all data/context functions — gate: 0 failures |
 | 4 | Design Brief | Main agent generates design brief; all UI agents use it |
-| 5 | Core Feature | Primary user flow built screen by screen; optional Playwright tests |
-| 6 | UI Polish | Remaining screens, navigation, responsive checks |
-| 7 | Integration | Full test suite, README, final cleanup — gate: 0 failures |
+| 5 | Core Feature | Primary user flow built screen by screen; per-screen Playwright tests |
+| 6 | UI Polish | Remaining screens, navigation, responsive checks; per-screen Playwright tests |
+| 7 | Browser Testing | Full happy path walkthrough — blank slate first, then seeded data — gate: 0 failures |
+| 8 | Integration | Full test suite, README, final cleanup — gate: 0 failures |
 
 ## Project Artifacts
 
@@ -84,8 +85,8 @@ All state is persisted in a `.mvp/` directory in your project root:
 
 Chosen during `/mvp start` and respected throughout the build:
 
-- **User-managed (recommended)** — you run the server in a separate terminal; Claude tells you when to restart (after config changes, new dependencies, migrations)
-- **Agent-managed** — Claude starts and stops the server automatically for a fully autonomous build
+- **User-managed (recommended)** — you run `npm run dev` (or `mix phx.server`) in a separate terminal; Claude tells you when to restart (after config changes, new dependencies, migrations)
+- **Agent-managed** — Claude starts and stops the server automatically for a fully autonomous build; for the JavaScript stack, both Vite and Express are managed as a single `concurrently` process
 
 ## Auto-Configured Project Settings
 
@@ -104,7 +105,8 @@ The build orchestrator uses a main agent that coordinates subagents:
 - **Subagents** handle feature work: up to 2-3 running in parallel for independent tasks
 - **Quality review agents** verify each completed task before it's committed; low-risk tasks (README, CSS appends) skip this step
 - **Lock-based concurrency** prevents conflicts on shared resources (migrations, design, dependencies)
-- **Worktree isolation** (`isolation: "worktree"`) is the default for agents touching more than 2 files
+- **Single-owner file rule** — `src/lib/api.ts`, `server/lib/routes.ts`, and `server/lib/types.ts` are assigned to at most one agent per batch to prevent write conflicts
+- **Worktree isolation** (`isolation: "worktree"`) is the default for agents touching more than 2 files; worktrees are merged back before quality review runs
 - **PID lifecycle tracking** — all background processes started by subagents are tracked, verified by command name, and swept clean at phase boundaries and session start
 
 ## Stack Conventions

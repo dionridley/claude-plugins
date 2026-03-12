@@ -115,7 +115,7 @@ The project root is your current working directory for the entire session. You M
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
      Build context — [App Name] ([stack])
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-     Phase:     [current phase name] ([X]/7)
+     Phase:     [current phase name] ([X]/8)
      Progress:  [completedTasks]/[totalTasks] tasks
      Sessions:  [N] prior sessions
 
@@ -178,8 +178,7 @@ Show this prompt to the user and wait:
   Please start the dev server in a separate terminal:
 
   Elixir:     mix phx.server
-  JavaScript: npm run dev  (in one terminal)
-              npm run server  (in a second terminal for Express)
+  JavaScript: npm run dev  (starts both Vite frontend and Express API via concurrently)
 
   Press Enter / reply "ready" when the server is running.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -265,15 +264,13 @@ For JavaScript stack:
    PORT=[port] mix phx.server &
    DEV_PID=$!
 
-   # JS — start both Vite and Express
-   npm run dev -- --port [port] &
-   VITE_PID=$!
-   npm run server &
-   EXPRESS_PID=$!
+   # JS — start both Vite and Express via concurrently (one process, one PID)
+   npm run dev &
+   DEV_PID=$!
    ```
-   Store PIDs and their command fragments in `state.processes.devServer` and `state.processes.expressServer`:
+   Store the single concurrently PID in `state.processes.devServer`. Killing this one PID terminates the entire process tree (both Vite and Express):
    ```json
-   { "pid": 12345, "port": 4000, "command": "mix phx.server" }
+   { "pid": 12345, "port": 3600, "command": "concurrently", "note": "parent process — killing this stops both Vite and Express" }
    ```
    Retry the curl check up to 5 times (2s sleep between attempts).
 
@@ -572,6 +569,99 @@ Parallelizable by screen (each screen is independent).
 
 ---
 
+### Phase: `browser-test` — Happy Path Browser Testing
+
+**This phase runs only if `state.project.playwrightEnabled == true`.** If Playwright is disabled, skip this phase immediately (mark it `"completed"`, advance `currentPhase`) without running any tests.
+
+**Goal:** Validate the complete application from a real user's perspective. The per-screen tests in `core` and `polish` phases verified individual screens using seeded data. This phase tests the full product from a blank slate — the state a real user experiences the first time they open the app.
+
+**This phase is not delegated.** The main agent dispatches and monitors all browser test agents directly.
+
+**Test 1 — Blank slate walkthrough (MANDATORY FIRST TEST):**
+
+Dispatch a browser test agent:
+```
+You are a Blank Slate Browser Test Agent for MVP: [App Name]
+Stack: [stack]
+Server is running at: http://localhost:[port]
+
+## Goal
+Verify the app works correctly when there is NO pre-existing data.
+This is the state a real first-time user experiences.
+
+## Steps
+1. Clear or bypass all seeded data to reach a truly empty state:
+   [specific instruction for this app — e.g. "navigate to a route that shows an empty list", "use the API to delete all seeded records", "use a fresh user session"]
+2. Navigate to the home/entry route — verify the EMPTY STATE renders (not a blank page, not an unhandled error, not a loading spinner that never resolves)
+3. Perform the COMPLETE core user flow from scratch, creating all required data as a new user would:
+   [expand each step from the brainstorm's core flow into concrete Playwright actions]
+4. After completing the flow, verify the result is visible and correct — the newly created item/state is shown
+5. Navigate to every screen in the app with this newly created data — verify each renders correctly
+6. Check browser console after every navigation — any uncaught error is a FAIL
+
+Take a screenshot after every major step.
+
+## Core User Flow
+[Paste verbatim from brainstorm.md]
+
+## All Screens
+[List every screen with its route]
+
+## Expected Output — MANDATORY FORMAT
+```json
+{
+  "test": "blank-slate",
+  "verdict": "PASS|FAIL",
+  "steps": [{"step": "description", "result": "pass|fail", "notes": "..."}],
+  "consoleErrors": [],
+  "screenshotPaths": [],
+  "diagnosis": "only if FAIL"
+}
+```
+```
+
+**Test 2 — Core flow with realistic data:**
+
+After Test 1 passes, dispatch a second browser test agent:
+```
+You are a Happy Path Browser Test Agent for MVP: [App Name]
+
+## Goal
+Verify the core user flow works correctly in a populated state (with seeded data present).
+
+## Steps
+1. Navigate to the home/entry route — verify seeded data is visible
+2. Walk the complete core user flow using existing seeded items
+3. Navigate to every screen — verify all render correctly with data
+4. Test at least one error/invalid-input path on each screen that has a form — verify VISIBLE feedback appears
+
+Take a screenshot after every major step.
+
+## Expected Output — MANDATORY FORMAT
+```json
+{
+  "test": "happy-path",
+  "verdict": "PASS|FAIL",
+  "steps": [{"step": "description", "result": "pass|fail", "notes": "..."}],
+  "consoleErrors": [],
+  "screenshotPaths": [],
+  "diagnosis": "only if FAIL"
+}
+```
+```
+
+**On failure:**
+- Fix the issue (dispatch a targeted implementation agent with the failure context and screenshots)
+- Re-run the failing test
+- Do NOT advance to `integration` until both tests pass
+
+**Gate — MANDATORY:**
+Both test agents must return `"verdict": "PASS"` with zero critical failures before this phase is marked complete.
+
+Update `analytics.browserTests` with results from both agents.
+
+---
+
 ### Phase: `integration` — Integration & Smoke Test
 
 **This phase is mandatory. Tests must pass before completion.**
@@ -697,7 +787,15 @@ For each delegatable task:
    ```
    ```
 
-4. **Choose isolation:**
+4. **Single-owner files — assign to at most one agent per batch:**
+   The following files are write-contention hotspots that multiple agents often need simultaneously. In any given batch, each of these files may only be assigned to ONE agent:
+   - `src/lib/api.ts` (client API layer)
+   - `server/lib/routes.ts` (API route constants)
+   - `server/lib/types.ts` (shared types)
+
+   When multiple tasks need changes to these files, sequence them: complete one agent's task and let the main agent integrate the changes, then dispatch the next agent. Do NOT attempt to parallelize work on these files — even "additive" parallel changes will cause conflicts.
+
+5. **Choose isolation:**
    - `isolation: "worktree"` for any agent creating or modifying more than 2 files (default for most agents)
    - No isolation for single-file low-risk tasks only
 
@@ -753,6 +851,14 @@ As each agent returns:
 Mark these as skipped: `qualityReview: { skipped: true, reason: "low-risk task" }`
 Increment `analytics.qualityReviews.skipped`.
 
+**Worktree merge before review:** If the agent ran with `isolation: "worktree"`, the quality review agent cannot see the changes from the main working directory. Merge the worktree branch back before dispatching review:
+```bash
+# The Agent tool returns the worktree branch name when isolation: "worktree" was used
+# and changes were made. Merge it back before running quality review.
+git merge --no-ff [worktree-branch] -m "mvp: merge agent [ID] — [task description]"
+```
+Only then dispatch the quality review agent — it will read the merged files from the main working directory. If the Agent tool result did not include a worktree branch (task made no file changes), no merge is needed.
+
 **For all other completed tasks** (status "success" or "partial"), dispatch a review agent:
 
 ```
@@ -786,6 +892,11 @@ You are a Quality Review Agent for MVP: [App Name]
    - For each: does it produce VISIBLE feedback on both success AND failure paths?
    - Flag as FAIL if any handler: returns early without feedback, catches an error silently, or has a code path where the user clicks/submits and nothing visibly changes
    - Examples of silent failure: `if (!page) return` with no toast/message, `catch (e) {}` with no error display, a toggle that updates state but shows no confirmation
+
+6. **Missing prerequisite state check** (for any UI action that depends on prior state):
+   - If a handler requires prerequisite state (e.g. "a form must have at least one page before a question can be added", "a list must have items before bulk actions are available"), verify the handler EITHER auto-creates the missing prerequisite OR shows a specific, visible message explaining why the action cannot proceed
+   - A guard clause that silently `return`s when prerequisite state is absent is FAIL — it hides real bugs and creates confusing UX on blank-slate forms/lists that new users always encounter first
+   - The correct pattern: auto-create (preferred), or show an inline prompt like "Add a page first to start adding questions"
 
 ## Expected Output — MANDATORY JSON
 ```json
@@ -1036,7 +1147,7 @@ When all phases complete:
    MVP COMPLETE: [App Name]
 
    Stack:            [Stack Name]
-   Phases:           7/7 complete
+   Phases:           8/8 complete
    Tasks:            [N]/[Total] ([failed] failed/skipped)
    Agents:           [N] dispatched ([success] success, [fail] failed)
    Quality reviews:  [passed] passed, [failed] failed, [skipped] skipped

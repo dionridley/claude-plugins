@@ -8,6 +8,7 @@ A collection of plugins that extend Claude Code's capabilities with specialized 
 |--------|-------------|
 | [Project Management](./project-mgmt-plugin/README.md) | Structured project management with research, PRDs, and implementation plans |
 | [Engineering Tools](./engineering-tools/README.md) | Skills and commands to assist with software engineering and coding tasks |
+| [Experimental](./experimental/README.md) | Autonomous MVP builder — brainstorm, scaffold, and build web app prototypes with parallel AI agents |
 
 ## Installation
 
@@ -47,6 +48,9 @@ claude plugins add dionridley/claude-plugins --plugin project-management
 
 # Install only the engineering tools plugin
 claude plugins add dionridley/claude-plugins --plugin engineering-tools
+
+# Install only the experimental (MVP builder) plugin
+claude plugins add dionridley/claude-plugins --plugin experimental
 ```
 
 ## About Marketplaces
@@ -78,7 +82,7 @@ claude plugins list
 /help
 ```
 
-For the project management plugin, you should see commands like `/dr-init`, `/dr-research`, `/dr-prd`, and `/dr-plan`.
+For the project management plugin, you should see commands like `/dr-init`, `/dr-research`, `/dr-prd`, and `/dr-plan`. For the experimental plugin, you should see `/mvp`.
 
 ## Updating Plugins
 

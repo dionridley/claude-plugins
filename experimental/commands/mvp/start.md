@@ -445,7 +445,7 @@ npm install
 
 # Install React Router, SQLite, and server dependencies
 npm install react-router-dom better-sqlite3 drizzle-orm express cors
-npm install -D @types/better-sqlite3 @types/express @types/cors drizzle-kit tsx
+npm install -D @types/better-sqlite3 @types/express @types/cors drizzle-kit tsx concurrently
 
 # Install Tailwind for Vite
 npm install -D tailwindcss @tailwindcss/vite
@@ -455,7 +455,10 @@ npm install --save-dev tidewave
 ```
 
 Set up TailwindCSS 4 and Tidewave Vite plugin:
-1. Read `src/index.css` and prepend `@import "tailwindcss";`
+1. **Overwrite `src/index.css` entirely** — the Vite scaffold ships `body { display: flex; place-items: center }` and dark-mode CSS custom properties that break any full-page layout. Replace the whole file with just the Tailwind import:
+   ```css
+   @import "tailwindcss";
+   ```
 2. **Overwrite `vite.config.ts` entirely** with the following (do NOT read-and-edit — the scaffolded file imports from `'vite'` which breaks the Vitest `test` block; `'vitest/config'` must be the import source):
    ```typescript
    import { defineConfig } from 'vitest/config'
@@ -484,13 +487,20 @@ Install Vitest for testing:
 npm install -D vitest @vitest/ui jsdom @testing-library/react @testing-library/user-event
 ```
 
-Add scripts to `package.json`:
+**Replace the default Vite `"dev"` script and add the following scripts to `package.json`** (the scaffolded `"dev": "vite"` must be replaced — it only starts Vite, not Express):
 ```json
+"dev": "concurrently \"npm run client\" \"npm run server\"",
+"client": "vite --port 3600",
+"server": "tsx watch server/index.ts",
 "test": "vitest run",
 "test:watch": "vitest",
 "typecheck": "tsc --noEmit",
-"server": "tsx watch server/index.ts"
+"build": "tsc -b && vite build",
+"db:generate": "drizzle-kit generate",
+"db:migrate": "drizzle-kit migrate",
+"db:studio": "drizzle-kit studio"
 ```
+`npm run dev` starts both servers via concurrently and is the only command needed in development. Killing the concurrently process (Ctrl+C or `kill [pid]`) terminates the entire process tree — both Vite and Express go down together.
 
 **Create the server directory structure:**
 
@@ -568,25 +578,76 @@ export const ROUTES = {
 } as const
 ```
 
+Write `drizzle.config.ts` in the project root (required for `drizzle-kit` commands — migrations silently fail without it):
+```typescript
+import { defineConfig } from 'drizzle-kit'
+
+export default defineConfig({
+  schema: './server/db/schema.ts',
+  out: './server/db/migrations',
+  dialect: 'sqlite',
+  dbCredentials: {
+    url: './local.db',
+  },
+})
+```
+
+Write `server/lib/types.ts` (shared types between server API responses and client state — define once, import from both sides):
+```typescript
+// Shared types used by both server API responses and the client API layer.
+// Any type that appears in BOTH a server response AND client state belongs here.
+//
+// Server imports:  import type { ... } from '../lib/types'
+// Client imports:  import type { ... } from '../../server/lib/types'
+//
+// Rule: PATCH/PUT endpoints must return the same type as the corresponding GET
+// (the full nested object, not the raw DB row). Clients must be able to call
+// setState(await api.things.update(...)) without any reshaping.
+
+// Types will be populated here during Phase 2 (Data Layer)
+// Example:
+// export type ThingSummary = {
+//   id: string
+//   title: string
+//   createdAt: number
+// }
+```
+
 Store `expressPort: 3500` in state — this port was verified available in Phase 3.
 
 **If Playwright is enabled, check installation and install only what is missing:**
-```bash
-# Check if Playwright CLI is available
-PLAYWRIGHT_VERSION=$(npx playwright --version 2>/dev/null)
 
-if [ -n "$PLAYWRIGHT_VERSION" ]; then
-  echo "[x] Playwright already installed ($PLAYWRIGHT_VERSION)"
-  # Check if Chromium browser binary is present
-  CHROMIUM_PATH=$(npx playwright show-browser-path chromium 2>/dev/null)
-  if [ -n "$CHROMIUM_PATH" ] && [ -d "$CHROMIUM_PATH" ]; then
-    echo "[x] Chromium browser binary already installed"
-  else
-    echo "[ ] Chromium binary missing — installing..."
-    npx playwright install chromium
-  fi
+```bash
+# Detect the Playwright CLI without using `npx` — npx shows an interactive install
+# prompt when playwright is not in local node_modules, which fails non-interactively
+# and causes a false negative (always triggers reinstall).
+if command -v playwright > /dev/null 2>&1; then
+  PW_BIN="playwright"
+elif [ -f "./node_modules/.bin/playwright" ]; then
+  PW_BIN="./node_modules/.bin/playwright"
 else
-  echo "[ ] Playwright not found — installing Playwright and Chromium..."
+  PW_BIN=""
+fi
+
+if [ -n "$PW_BIN" ]; then
+  PLAYWRIGHT_VERSION=$($PW_BIN --version 2>/dev/null)
+  echo "[x] Playwright CLI ($PLAYWRIGHT_VERSION)"
+else
+  echo "[ ] Playwright CLI not found on PATH"
+fi
+
+# Check Chromium via the OS cache directory — more reliable than `show-browser-path`
+# because it does not require the CLI and handles version-folder changes gracefully.
+case "$(uname -s)" in
+  Darwin)               PW_CACHE="$HOME/Library/Caches/ms-playwright" ;;
+  MINGW*|MSYS*|CYGWIN*) PW_CACHE="${LOCALAPPDATA:-$HOME/AppData/Local}/ms-playwright" ;;
+  *)                    PW_CACHE="$HOME/.cache/ms-playwright" ;;
+esac
+
+if ls "$PW_CACHE/chromium-"* > /dev/null 2>&1; then
+  echo "[x] Chromium browser binary — already installed"
+else
+  echo "[ ] Chromium binary not found — installing..."
   npx playwright install chromium
 fi
 ```
@@ -598,20 +659,20 @@ Show the result in the prerequisite checklist:
 ```
 or:
 ```
-  [ ] Playwright — installed now
+  [ ] Playwright CLI not on PATH
   [ ] Chromium — installed now
 ```
 
-Verify the Vite dev server starts:
+Verify the dev servers start (both Vite and Express via concurrently):
 ```bash
-npm run dev -- --port 3600 &
+npm run dev &
 DEV_PID=$!
-sleep 4
+sleep 6
 /usr/bin/curl -s -o /dev/null -w "%{http_code}" http://localhost:3600
 kill $DEV_PID 2>/dev/null
 ```
 
-If curl returns 200, scaffolding succeeded.
+If curl returns 200 from port 3600, scaffolding succeeded. (Express on 3500 is a stub at this point — only Vite is checked.)
 
 ### For Elixir Stack:
 
@@ -722,17 +783,31 @@ config :[app], [App].Mailer, adapter: Swoosh.Adapters.Test
 
 **14. If Playwright is enabled, install browser binaries (check first):**
 ```bash
-PLAYWRIGHT_VERSION=$(npx playwright --version 2>/dev/null)
-# Check if already installed
-if [ -n "$PLAYWRIGHT_VERSION" ]; then
-  echo "[x] Playwright already installed ($PLAYWRIGHT_VERSION)"
-  CHROMIUM_PATH=$(npx playwright show-browser-path chromium 2>/dev/null)
-  if [ -n "$CHROMIUM_PATH" ] && [ -d "$CHROMIUM_PATH" ]; then
-    echo "[x] Chromium browser binary already installed"
-  else
-    npx playwright install chromium
-  fi
+# Use command -v instead of npx to avoid the interactive install prompt
+if command -v playwright > /dev/null 2>&1; then
+  PW_BIN="playwright"
+elif [ -f "./node_modules/.bin/playwright" ]; then
+  PW_BIN="./node_modules/.bin/playwright"
 else
+  PW_BIN=""
+fi
+
+if [ -n "$PW_BIN" ]; then
+  echo "[x] Playwright CLI ($($PW_BIN --version 2>/dev/null))"
+else
+  echo "[ ] Playwright CLI not found on PATH"
+fi
+
+case "$(uname -s)" in
+  Darwin)               PW_CACHE="$HOME/Library/Caches/ms-playwright" ;;
+  MINGW*|MSYS*|CYGWIN*) PW_CACHE="${LOCALAPPDATA:-$HOME/AppData/Local}/ms-playwright" ;;
+  *)                    PW_CACHE="$HOME/.cache/ms-playwright" ;;
+esac
+
+if ls "$PW_CACHE/chromium-"* > /dev/null 2>&1; then
+  echo "[x] Chromium browser binary — already installed"
+else
+  echo "[ ] Chromium binary not found — installing..."
   npx playwright install chromium
 fi
 ```
@@ -912,6 +987,15 @@ Create `.mvp/state.json`:
       "tasks": []
     },
     {
+      "id": "browser-test",
+      "name": "Happy Path Browser Testing",
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "estimatedMinutes": 20,
+      "tasks": []
+    },
+    {
       "id": "integration",
       "name": "Integration & Smoke Test",
       "status": "pending",
@@ -987,7 +1071,7 @@ MVP project initialized!
   Brainstorm:  .mvp/brainstorm.md
   State:       .mvp/state.json
 
-  Phases: 7  |  Total tasks: [N]
+  Phases: 8  |  Total tasks: [N]
 
   What was created:
     [x] .mvp/ directory with brainstorm doc and state file

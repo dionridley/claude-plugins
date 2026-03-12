@@ -21,7 +21,7 @@
       "name": "experimental",
       "source": "./experimental",
       "description": "Autonomous MVP builder — brainstorm, scaffold, and build web app prototypes with parallel AI agents",
-      "version": "0.3.8"
+      "version": "0.5.0"
     }
   ]
 }
