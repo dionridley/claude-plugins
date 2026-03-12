@@ -21,6 +21,12 @@ You are executing the START mode of the `/mvp` command. Your job is to:
 Before anything else, check if `.mvp/state.json` already exists in the current directory.
 
 1. **Try to read `.mvp/state.json`:**
+   - If it EXISTS and `status == "awaiting_brainstorm"`:
+     - Stack was chosen and permissions were written, but brainstorming was not completed.
+     - Show: "Permissions loaded. Resuming setup — continuing with app idea questions."
+     - Read `stack` from `state.project.stack`
+     - **Jump directly to Phase 2, Step 2** — skip the stack question, go straight to the app idea.
+
    - If it EXISTS and `status == "awaiting_scaffold"`:
      - Settings were written before a required restart. Scaffold hasn't run yet.
      - Show: "Permissions loaded. Resuming setup for [name] — continuing to scaffold."
@@ -62,7 +68,59 @@ Use AskUserQuestion:
   2. "Elixir (Phoenix + LiveView)" — Description: "Full-stack Elixir with real-time server-rendered UI. SQLite via Ecto."
 - **multiSelect:** false
 
-Store the chosen stack.
+Store the chosen stack. Then immediately write permissions and restart — loading them now means all prerequisite checks and scaffold commands will run without per-command approval prompts.
+
+**Write settings, save state, and pause for restart:**
+
+1. Read the appropriate baseline permissions file:
+   - **JS:** Read `${CLAUDE_PLUGIN_ROOT}/commands/mvp/settings/typescript.json`
+   - **Elixir:** Read `${CLAUDE_PLUGIN_ROOT}/commands/mvp/settings/elixir.json`
+
+2. Create the `.mvp/` directory structure and initialize git:
+   ```bash
+   mkdir -p .mvp/agent-logs .mvp/research .mvp/resources
+   git rev-parse --git-dir 2>/dev/null || git init
+   ```
+
+3. Write `.claude/settings.local.json` with the contents read above.
+
+4. Write a minimal `.mvp/state.json` to persist the stack choice across the restart:
+   ```json
+   {
+     "version": "1.1.0",
+     "project": {
+       "stack": "[chosen stack: js|elixir]"
+     },
+     "status": "awaiting_brainstorm"
+   }
+   ```
+
+5. Show restart message and **STOP**:
+   ```
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     Restart required to load tool permissions
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     Tool permissions for the [JS/Elixir] stack have
+     been written to .claude/settings.local.json.
+
+     Loading them before the prerequisite checks and
+     scaffold means you won't be prompted to approve
+     each command individually.
+
+     Before you exit:
+       Copy the --resume command shown below.
+
+     To continue:
+       1. Copy the resume command (shown on exit)
+       2. claude --resume <session-id>
+       3. Run /mvp start
+
+     Claude will detect the saved state and jump
+     straight to the remaining setup questions.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ```
+
+**STOP here.** Do not proceed to Step 2 until the user has restarted and re-run `/mvp start`.
 
 ### Step 2: App Idea
 
@@ -328,33 +386,13 @@ All prerequisites met!
 
 ---
 
-## Phase 4: Write Settings and Restart
+## Phase 4: Save Brainstorm State
 
-Settings must be loaded before scaffolding begins — they pre-approve the shell permissions that `npm create`, `mix phx.new`, `git`, and other scaffold commands need. Write them now, then restart Claude Code to load them.
+Settings and git are already initialized from the first restart (Phase 2 Step 1). This phase saves the completed brainstorm data to state.json before scaffold begins. No restart is needed.
 
-### 1. Create .mvp/ directory and initialize git
+### Write partial `state.json`
 
-```bash
-mkdir -p .mvp/agent-logs .mvp/research .mvp/resources
-```
-
-Initialize git now — worktree isolation (`isolation: "worktree"`) used by build agents requires an initialized repo. Doing it here ensures it's in place before any agents run, even if the session is interrupted between `/mvp start` and `/mvp build`.
-
-```bash
-git rev-parse --git-dir 2>/dev/null || git init
-```
-
-### 2. Write `.claude/settings.local.json`
-
-Read the appropriate baseline permissions file:
-- **Elixir:** Read `${CLAUDE_PLUGIN_ROOT}/commands/mvp/settings/elixir.json`
-- **JS:** Read `${CLAUDE_PLUGIN_ROOT}/commands/mvp/settings/typescript.json`
-
-Write contents verbatim to `.claude/settings.local.json`.
-
-### 3. Write partial `state.json`
-
-Write `.mvp/state.json` with `status: "awaiting_scaffold"` so Phase 1 can resume after restart:
+Update `.mvp/state.json` with `status: "awaiting_scaffold"` and all brainstorm data collected in Phase 2:
 
 ```json
 {
@@ -384,33 +422,7 @@ Write `.mvp/state.json` with `status: "awaiting_scaffold"` so Phase 1 can resume
 }
 ```
 
-### 4. Show restart message and STOP
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Restart required to load permissions
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Tool permissions have been written to:
-    .claude/settings.local.json
-
-  These take effect when Claude Code restarts. Without
-  this restart, scaffold commands (git, npm/mix, file
-  operations) will each prompt for approval individually.
-
-  Before you exit:
-    Copy the --resume command shown below.
-
-  To continue:
-    1. Copy the resume command (shown by Claude Code on exit)
-    2. claude --resume <session-id>
-    3. Run: /mvp start
-
-  Claude will detect the saved state and jump straight
-  to scaffolding — no need to answer questions again.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**STOP here.** Do not proceed to Phase 5 until the user has restarted and re-run `/mvp start`.
+Continue immediately to Phase 5 — no restart required. Permissions are already loaded from the Phase 2 restart.
 
 ---
 

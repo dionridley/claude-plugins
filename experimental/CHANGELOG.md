@@ -5,6 +5,12 @@ All notable changes to the Experimental plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-03-11
+
+### Fixed
+- **Restart moved earlier in `/mvp start`** — permissions are now written immediately after stack choice (Phase 2 Step 1) rather than after all brainstorm questions. This means all prerequisite checks (Phase 3) and scaffold commands (Phase 5) run with pre-approved permissions — no per-command approval prompts during the build setup.
+- **Settings files audited for missing bash patterns** — added `Bash(ps:*)`, `Bash(sleep:*)`, `Bash(echo:*)`, `Bash(basename:*)`, `Bash(date:*)`, `Bash(if:*)`, `Bash(case:*)`, `Bash(command:*)`, `Bash(which:*)`, `Bash(/usr/bin/curl:*)` to both stack settings files; consolidated `npm create:*`/`npm install:*`/`npm run:*` to `Bash(npm:*)` in the JS settings; consolidated `asdf list:*`/`asdf local:*` to `Bash(asdf:*)` and added `Bash(npx:*)` in the Elixir settings
+
 ## [0.5.0] - 2026-03-11
 
 ### Added
