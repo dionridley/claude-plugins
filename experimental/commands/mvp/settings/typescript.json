@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(git:*)",
+      "Bash(lsof:*)",
+      "Bash(kill:*)",
+      "Bash(pkill:*)",
+      "Bash(ps:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(rm:*)",
+      "Bash(touch:*)",
+      "Bash(curl:*)",
+      "Bash(/usr/bin/curl:*)",
+      "Bash(sed:*)",
+      "Bash(echo:*)",
+      "Bash(sleep:*)",
+      "Bash(basename:*)",
+      "Bash(date:*)",
+      "Bash(if:*)",
+      "Bash(case:*)",
+      "Bash(command:*)",
+      "Bash(which:*)",
+      "WebFetch",
+      "WebSearch",
+      "mcp__tidewave__*",
+      "mcp__playwright__*"
+    ]
+  }
+}

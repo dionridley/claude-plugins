@@ -1,0 +1,126 @@
+# Changelog
+
+All notable changes to the Experimental plugin will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.5.1] - 2026-03-11
+
+### Fixed
+- **Restart moved earlier in `/mvp start`** — permissions are now written immediately after stack choice (Phase 2 Step 1) rather than after all brainstorm questions. This means all prerequisite checks (Phase 3) and scaffold commands (Phase 5) run with pre-approved permissions — no per-command approval prompts during the build setup.
+- **Settings files audited for missing bash patterns** — added `Bash(ps:*)`, `Bash(sleep:*)`, `Bash(echo:*)`, `Bash(basename:*)`, `Bash(date:*)`, `Bash(if:*)`, `Bash(case:*)`, `Bash(command:*)`, `Bash(which:*)`, `Bash(/usr/bin/curl:*)` to both stack settings files; consolidated `npm create:*`/`npm install:*`/`npm run:*` to `Bash(npm:*)` in the JS settings; consolidated `asdf list:*`/`asdf local:*` to `Bash(asdf:*)` and added `Bash(npx:*)` in the Elixir settings
+
+## [0.5.0] - 2026-03-11
+
+### Added
+- **`concurrently` for unified dev server** — `npm run dev` now starts both Vite (port 3600) and Express (port 3500) via a single concurrently process; killing the parent process terminates the entire process tree, eliminating the zombie process risk of managing two PIDs separately
+- **Dedicated `browser-test` phase** (Phase 7 of 8) between `polish` and `integration` — mandatory when Playwright is enabled; runs two sequential test agents: (1) blank slate walkthrough from a truly empty state, (2) happy path with seeded data. Gates on zero failures before advancing to `integration`
+- **`drizzle.config.ts`** created at scaffold time — was missing, causing silent migration failures
+- **`server/lib/types.ts`** stub created at scaffold time — shared type definitions for server API responses and client state; both sides import from this single source of truth
+- **`db:generate`, `db:migrate`, `db:studio`** scripts added to `package.json` at scaffold time
+- **Single-owner file rule** in agent dispatch — `src/lib/api.ts`, `server/lib/routes.ts`, and `server/lib/types.ts` are flagged as write-contention hotspots; only one agent per batch may be assigned to each
+- **Missing prerequisite state guard check** added to quality review agent — guard clauses that silently `return` when required state is absent (e.g. no pages in a form) are now a FAIL; handler must either auto-create or show visible feedback
+- **Blank slate as first browser test** — `browser-test` phase always begins with a test from a completely empty state (no seeded data), not from pre-populated fixtures
+
+### Fixed
+- **Vite boilerplate `index.css` now stripped at scaffold** — the default `body { display: flex; place-items: center }` and dark-mode CSS variables broke full-page layouts; `src/index.css` is now overwritten with just `@import "tailwindcss";`
+- **Playwright detection no longer uses `npx playwright --version`** — npx shows an interactive install prompt when playwright is not in local `node_modules`, which fails non-interactively and caused the detection to always return false. Now uses `command -v playwright` with a fallback to `./node_modules/.bin/playwright`, and detects Chromium via the OS cache directory (`~/Library/Caches/ms-playwright/` on macOS, `~/.cache/ms-playwright/` on Linux, `%LOCALAPPDATA%\ms-playwright\` on Windows) rather than `show-browser-path`
+- **Worktree + quality review visibility** — when a subagent runs with `isolation: "worktree"`, the worktree branch is now merged back to main BEFORE the quality review agent is dispatched; previously the reviewer was reading stale files in the main working directory
+
+### Changed
+- **Shared types convention** added to `conventions/typescript.md`: types in both server responses and client state must live in `server/lib/types.ts`
+- **API mutation response shape convention** added: `PATCH`/`PUT`/`POST` must return the full nested resource, same shape as `GET`
+- **Express route ordering rule** added: parameterized routes (`:id`, `:slug`) must be declared after literal path segments at the same level
+- **React `onChange + setTimeout` anti-pattern** added as an explicit FAIL in conventions: pass values directly to handlers instead of reading state on the next tick
+- Project structure in `conventions/typescript.md` corrected — `server/db/` and `server/lib/` paths now match actual scaffold output
+
+## [0.4.0] - 2026-03-11
+
+Retrospective improvements based on lessons learned building the Former prototype. All 8 issues from `.research/former-01-lessons-learn.md` addressed.
+
+### Added
+- **Non-default ports** to avoid collisions with standard framework defaults: JS Express API on `3500`, Vite on `3600`, Phoenix on `4500`
+- **Port health check at every `/mvp build` session start** — verifies ports in `state.json` are free; kills known stale MVP PIDs with command verification, stops with a clear message for unknown processes
+- **Process kill reference at session end** — when `serverManagement == "agent"`, every session pause and completion prints exact `kill [pid]` commands for all processes started during the session
+- `"typecheck": "tsc --noEmit"` script added to `package.json` at scaffold time (JS stack)
+- **Silent failure check** in quality review agent — reviewer reads every event handler, form action, and button in modified files and fails any that return early or catch errors without visible user feedback
+- **Empty state + error path steps** as mandatory items in every Playwright per-screen browser test script
+- **End-of-phase regression smoke test** after `core` and `polish` phases (when Playwright is enabled) — walks the complete core user flow and navigates every screen before advancing
+- **Richer `resumePoint` schema** — includes `nextAction`, `lastCompletedTask`, `recentFilesChanged` (up to 5 files), and `openIssues`; updated after every completed task
+- **Structured agent logs** written to `.mvp/agent-logs/[agent-id].json` after each agent completes — includes task, files, quality review verdict, browser test result, and a `decisions` field
+- **Session-start context reconstruction** — Phase 1 of `/mvp build` reads `state.json`, brainstorm file, and 3 most recent agent logs before doing anything else
+
+### Fixed
+- Scaffold now uses a named subdirectory (`[slug]/`) for both Vite and Phoenix, then copies files up — avoids the interactive "directory not empty" TTY prompt when `.mvp/` files already exist in the project root
+- `vite.config.ts` written from scratch with `defineConfig` from `'vitest/config'` (not `'vite'`) — prevents the `'test' does not exist in type 'UserConfigExport'` error that only surfaces at production build time
+- Tidewave Vite plugin import corrected to `tidewave/vite-plugin` (was `tidewave/vite`)
+- `git init` now runs in Phase 4 of `/mvp start` alongside `.mvp/` creation — ensures worktree isolation is available from the first build agent dispatch
+- `/mvp build` Phase 1 checks `git rev-parse --git-dir` before dispatching agents; initializes repo if missing — worktree isolation can no longer silently fail
+- Playwright browser binary check was unconditional in the Elixir scaffold path — now matches the conditional check behavior of the TypeScript scaffold
+
+### Changed
+- Quality review agent now runs `npm run typecheck` (`tsc --noEmit`) for JS tasks — catches type errors at the per-task level rather than only at final build time
+- Elixir quality review compile check explicitly treats warnings as failures
+- Phase `polish` browser testing expanded to per-screen tests for all new screens, matching Phase `core` behavior
+- Port conflicts now stop with a clear error instead of silently auto-incrementing
+- `conventions/typescript.md` port section updated to document the non-default port strategy and remove the dangerous `lsof -ti | xargs kill` pattern
+
+## [0.3.0] - 2026-03-09
+
+### Added
+- **Auto-configured MCP servers** — `/mvp start` writes `.mcp.json` and `.claude/settings.local.json` into the project directory automatically; no manual Claude Code settings required
+  - Tidewave MCP (`mcp__tidewave__*`) configured for both Elixir and JavaScript stacks
+  - Playwright MCP (`@playwright/mcp@latest --isolated --caps=vision`) configured when E2E testing is opted in
+- **Stack permissions files** — `commands/mvp/settings/elixir.json` and `commands/mvp/settings/typescript.json` define all required tool permissions written to new projects at setup time
+- **Server management choice** — `/mvp start` now asks whether the dev server should be agent-managed (fully autonomous) or user-managed (user runs server in a separate terminal; agent instructs when to restart). Stored in `state.json` and respected throughout the build.
+- **Tidewave in TypeScript scaffold** — `@tidewave/tidewave` installed, Express middleware wired up, MCP server available at `/tidewave`
+- **Prescriptive TypeScript server structure** — scaffold now creates `server/index.ts`, `server/db/schema.ts`, `server/db/client.ts`, `server/db/seed.ts`, and `server/lib/routes.ts` (shared API route constants used by both Express and the fetch client to prevent URL mismatches)
+- **Playwright browser binaries installed at setup** — `npx playwright install chromium` runs during scaffold if Playwright is opted in; restart-and-resume instructions shown at completion
+- **Swoosh hackney fix as a concrete scaffold step** — `config/dev.exs` and `config/test.exs` patched at Elixir scaffold time; previously convention-only
+- **Tidewave added to Elixir scaffold** — `{:tidewave, "~> 0.1", only: :dev}` and router setup added as scaffold steps
+- **Process safety warnings** — agent-managed builds show a per-stack warning at session start about same-name process collision risk (`mix phx.server`, `vite`, `tsx`)
+- **Command verification before all process kills** — every kill operation now checks `ps -p [pid] -o args=` against the stored command fragment; PIDs recycled to unrelated processes are marked `"recycled"` and skipped rather than killed
+- **Subagent PID lifecycle tracking** — `state.processes.subagentPids` tracks every background process started by a subagent with full start/stop metadata; swept at session start, phase completion, and build completion
+- **`--resume` flag instructions** — completion message now tells users to copy the resume command before restarting Claude Code so they can continue the conversation with full context
+
+### Changed
+- Projects now scaffold into the current directory (using `.`) instead of creating a subdirectory — matches expected workflow of `mkdir my-app && cd my-app && claude`
+- Playwright question updated to reflect automatic MCP configuration; "requires manual setup" caveat removed
+- `lsof -ti:[port] | xargs kill` pattern removed entirely from agent-managed server startup; replaced with PID-based kill with command verification
+- `typescript-conventions.md` fully fleshed out — `verbatimModuleSyntax`/`import type` rule (blank-page prevention), DB-in-callbacks prohibition, `npx tsc --noEmit` quality gate, idempotent seed pattern, API URL contract rule, port handling, Tidewave setup, Playwright smoke test guidance
+- `elixir-conventions.md` expanded — Swoosh config rule, `flash_group` Layouts import rule, compiler warnings as failures, `signed_in_path` test update rule, Tidewave usage rule
+- Convention files reorganised into `commands/mvp/conventions/` folder; filenames simplified to `elixir.md` and `typescript.md`
+
+## [0.2.0] - 2026-03-08
+
+### Added
+- Playwright E2E testing support — opt-in during `/mvp start`, enabled per-screen in Phase 5 (core feature) if chosen
+- Mandatory Phase 3: Test Scaffolding — unit tests for all data/context functions must pass before proceeding
+- Mandatory Phase 4: Design Brief — generated by main agent and saved to `.mvp/research/design-brief.md` before any UI agents run
+- Stack conventions system — `commands/mvp/conventions/` directory with per-stack mandatory rules injected into every agent prompt
+  - `conventions/elixir.md` — Phoenix 1.8 standing rules, patterns, and quick reference (DaisyUI, LiveView, context, factory, migrations)
+  - `conventions/typescript.md` — TypeScript/React 19 standing rules (placeholder, to be expanded with real build learnings)
+- Elixir scaffold hardening in `/mvp start`: OTP 25+ check, `--no-install` flag, Faker dependency, asset binary pre-install, boilerplate file cleanup, `root.html.heex` flash group patch, `runtime.exs` port wrapping, port conflict detection
+- Low-risk task flag — tasks like README writes and CSS appends skip quality review
+- Worktree isolation is now the default for subagents touching more than 2 files
+
+### Changed
+- Build process expanded from 5 phases to 7 phases to accommodate test scaffolding and design brief gates
+- Integration phase (Phase 7) now requires full test suite to pass with 0 failures before final commit
+- `brainstorm.md` filename is no longer prompted — always defaults to `brainstorm.md`
+
+## [0.1.0] - 2026-02-24
+
+### Added
+- Initial release of experimental plugin
+- `/mvp start` command for brainstorming and project scaffolding
+- `/mvp build` command for autonomous building with parallel AI agents
+- `/mvp status` command for progress dashboard
+- `/mvp summary` command for HTML analytics page generation
+- JavaScript stack support (Vite + TypeScript + React 19 + TailwindCSS 4 + SQLite)
+- Elixir stack support (Phoenix Framework + LiveView + SQLite)
+- Persistent state management via `.mvp/` directory
+- Lock-based agent concurrency control
+- Quality review agent pattern for completed tasks
+- Auto git commits at task completion checkpoints
