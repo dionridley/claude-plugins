@@ -1,10 +1,10 @@
 # /mvp start — Brainstorm & Scaffold
 
-This file is read by the main `mvp.md` router when the user runs `/mvp start` or `/mvp` with no arguments.
+This file is loaded by the `/mvp` skill router when the user runs `/mvp start` or `/mvp` with no arguments.
 
 ## Instructions for Claude
 
-You are executing the START mode of the `/mvp` command. Your job is to:
+You are executing the START mode of the `/mvp` skill. Your job is to:
 1. Brainstorm an app idea with the user and lock in scope
 2. Ask about Playwright E2E testing preference and server management preference
 3. Check prerequisites for the chosen stack
@@ -73,8 +73,8 @@ Store the chosen stack. Then immediately write permissions and restart — loadi
 **Write settings, save state, and pause for restart:**
 
 1. Read the appropriate baseline permissions file:
-   - **JS:** Read `${CLAUDE_PLUGIN_ROOT}/commands/mvp/settings/typescript.json`
-   - **Elixir:** Read `${CLAUDE_PLUGIN_ROOT}/commands/mvp/settings/elixir.json`
+   - **JS:** Read `${CLAUDE_SKILL_DIR}/references/settings/typescript.json`
+   - **Elixir:** Read `${CLAUDE_SKILL_DIR}/references/settings/elixir.json`
 
 2. Create the `.mvp/` directory structure and initialize git:
    ```bash
@@ -845,9 +845,27 @@ kill $SERVER_PID 2>/dev/null
 
 Settings were already written in Phase 4. This phase writes only the MCP server configuration, which depends on the port determined during scaffold.
 
-Write `.mcp.json` in the current directory:
+Write `.mcp.json` in the current directory.
+
+**Platform detection**: Before writing, check the OS. On Windows, `npx` is a `.cmd` script and must be invoked through `cmd`:
+- **Windows**: `"command": "cmd"` with `"args": ["/c", "npx", ...]`
+- **macOS/Linux**: `"command": "npx"` with `"args": [...]`
+
+Use this bash check to set the shape:
+```bash
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] || command -v cmd.exe &>/dev/null; then
+  # Windows — wrap npx with cmd /c
+  NPX_CMD="cmd"
+  NPX_PREFIX='"/c", "npx",'
+else
+  NPX_CMD="npx"
+  NPX_PREFIX=""
+fi
+```
 
 **For Elixir stack** (Tidewave served by Phoenix over SSE):
+
+macOS/Linux:
 ```json
 {
   "mcpServers": {
@@ -863,7 +881,25 @@ Write `.mcp.json` in the current directory:
 }
 ```
 
+Windows:
+```json
+{
+  "mcpServers": {
+    "tidewave": {
+      "type": "sse",
+      "url": "http://localhost:[chosen-port]/tidewave"
+    },
+    "playwright": {
+      "command": "cmd",
+      "args": ["/c", "npx", "@playwright/mcp@latest", "--isolated", "--caps=vision"]
+    }
+  }
+}
+```
+
 **For JavaScript stack** (Tidewave runs as a standalone stdio process via the Vite plugin):
+
+macOS/Linux:
 ```json
 {
   "mcpServers": {
@@ -874,6 +910,22 @@ Write `.mcp.json` in the current directory:
     "playwright": {
       "command": "npx",
       "args": ["@playwright/mcp@latest", "--isolated", "--caps=vision"]
+    }
+  }
+}
+```
+
+Windows:
+```json
+{
+  "mcpServers": {
+    "tidewave": {
+      "command": "cmd",
+      "args": ["/c", "npx", "tidewave", "mcp"]
+    },
+    "playwright": {
+      "command": "cmd",
+      "args": ["/c", "npx", "@playwright/mcp@latest", "--isolated", "--caps=vision"]
     }
   }
 }
@@ -895,7 +947,7 @@ git add -A && git commit -m "mvp: initialize [project-name] with [stack]"
 
 ## Phase 7: Write Brainstorm Document
 
-1. Read the template: `${CLAUDE_PLUGIN_ROOT}/templates/brainstorm-template.md`
+1. Read the template: `${CLAUDE_SKILL_DIR}/templates/brainstorm-template.md`
 2. Replace ALL `{{PLACEHOLDER}}` values with actual data from the brainstorm conversation
 3. Write to `.mvp/brainstorm.md`
 

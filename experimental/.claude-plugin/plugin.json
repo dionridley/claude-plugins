@@ -1,7 +1,7 @@
 {
   "name": "experimental",
-  "version": "0.5.1",
-  "description": "Autonomous MVP builder — brainstorm, scaffold, and build web app prototypes with parallel AI agents",
+  "version": "0.6.0",
+  "description": "Work in Progress Tools — experimental capabilities under active development and testing",
   "author": {
     "name": "Dion Ridley",
     "email": "dridley@gmail.com"
@@ -14,8 +14,8 @@
     "web-development"
   ],
   "license": "MIT",
-  "commands": [
-    "./commands/mvp.md"
-  ],
-  "skills": []
+  "commands": [],
+  "skills": [
+    "./skills/mvp"
+  ]
 }

@@ -1,38 +1,48 @@
 ---
+name: mvp
 description: Autonomous MVP builder — brainstorm, scaffold, build, and track web app prototypes
 argument-hint: <start|build|status|summary>
-allowed-tools: Read, Write, Edit, Grep, Glob, Bash(*), WebSearch, WebFetch, Task
+disable-model-invocation: true
+effort: high
+allowed-tools: Read Write Edit Grep Glob Bash(*) Agent AskUserQuestion WebSearch WebFetch TaskCreate TaskUpdate TaskGet TaskList
 ---
 
 # MVP Builder
 
-Autonomous command that brainstorms an app idea with the user, scaffolds the project, and builds a working prototype using parallel AI agents.
+Autonomous skill that brainstorms an app idea with the user, scaffolds the project, and builds a working prototype using parallel AI agents.
 
-## Instructions for Claude
+```
+Effort mode: high (set by /mvp for best results)
+Override with /effort medium if preferred.
+```
 
-You are executing the `/mvp` command. Detect the mode from `<command-args>` and delegate to the appropriate mode file.
+## Mode Routing
 
-### Mode Detection
+Detect the mode from the user's arguments and delegate to the appropriate reference file.
 
-**CRITICAL**: The command arguments are provided in the `<command-args>` tag at the top of this message.
+**Arguments:** $ARGUMENTS
 
-1. **Check the `<command-args>` value:**
-   - If it starts with "start" (or is empty/whitespace):
-     -> **START mode**: Read `${CLAUDE_PLUGIN_ROOT}/commands/mvp/start.md` and follow those instructions
-   - If it starts with "build":
-     -> **BUILD mode**: Read `${CLAUDE_PLUGIN_ROOT}/commands/mvp/build.md` and follow those instructions
-   - If it starts with "status":
-     -> **STATUS mode**: Read `${CLAUDE_PLUGIN_ROOT}/commands/mvp/status.md` and follow those instructions
-   - If it starts with "summary":
-     -> **SUMMARY mode**: Read `${CLAUDE_PLUGIN_ROOT}/commands/mvp/summary.md` and follow those instructions
+**Route to the correct mode:**
 
-2. **If no recognized mode**, show usage help:
+1. If arguments are empty, whitespace-only, or start with "start":
+   - Read `${CLAUDE_SKILL_DIR}/references/start.md` and follow those instructions
+
+2. If arguments start with "build":
+   - Read `${CLAUDE_SKILL_DIR}/references/build.md` and follow those instructions
+
+3. If arguments start with "status":
+   - Read `${CLAUDE_SKILL_DIR}/references/status.md` and follow those instructions
+
+4. If arguments start with "summary":
+   - Read `${CLAUDE_SKILL_DIR}/references/summary.md` and follow those instructions
+
+5. If no recognized mode, show usage help:
    ```
-   MVP Builder - Autonomous web app prototype builder
+   MVP Builder — Autonomous web app prototype builder
 
    Usage:
      /mvp start     Brainstorm an idea, choose tech stack, scaffold project
-     /mvp build     Build the prototype (resumes from saved state if prior progress exists)
+     /mvp build     Build the prototype (resumes from saved state)
      /mvp status    View current progress dashboard
      /mvp summary   Generate HTML analytics page
 
@@ -44,7 +54,7 @@ You are executing the `/mvp` command. Detect the mode from `<command-args>` and 
 
 ## Shared Conventions
 
-All modes share these conventions. The mode-specific files inherit this context.
+All modes inherit these conventions. Mode-specific reference files build on top of them.
 
 ### State Directory
 
@@ -52,9 +62,9 @@ All MVP state is persisted in `.mvp/` in the current working directory:
 
 | File/Folder | Purpose |
 |-------------|---------|
-| `.mvp/brainstorm.md` | Source-of-truth document: vision, scope, task tracking, agent log |
-| `.mvp/state.json` | Machine-readable state for build orchestration and analytics |
-| `.mvp/agent-logs/` | Individual agent run reports (one file per agent) |
+| `.mvp/brainstorm.md` | Source-of-truth: vision, scope, task tracking, agent log |
+| `.mvp/state.json` | Machine-readable state for orchestration and analytics |
+| `.mvp/agent-logs/` | Individual agent run reports (one per agent) |
 | `.mvp/research/` | Research artifacts gathered during brainstorming |
 | `.mvp/resources/` | Downloaded assets (images, icons, etc.) |
 
@@ -104,9 +114,9 @@ Subagents MUST return results as structured JSON:
 
 `state.json` tracks resource locks to prevent agent conflicts:
 
-| Lock | What it protects |
-|------|-----------------|
-| `migrations` | Database schema changes — only one agent at a time |
+| Lock | Protects |
+|------|----------|
+| `migrations` | Database schema changes — one agent at a time |
 | `design` | Global CSS, theme, design system files |
 | `dependencies` | package.json / mix.exs modifications (main agent only) |
 
@@ -121,8 +131,16 @@ The main agent (not subagents) ALWAYS handles:
 - Managing process PIDs
 - Acquiring/releasing locks
 
+### Task Progress Tracking
+
+Use TaskCreate and TaskUpdate to provide real-time visual progress in the Claude Code UI. This complements the `.mvp/state.json` system which persists across sessions.
+
+- Create tasks at the start of each build phase
+- Update task status as work progresses (in_progress, completed)
+- Both systems must stay in sync — update state.json AND task status together
+
 ---
 
 ## Execute Now
 
-Detect the mode from `<command-args>` and read the appropriate mode file.
+Route to the correct mode based on the arguments above.
