@@ -1,15 +1,17 @@
 # Experimental Plugin
 
-Autonomous MVP builder that brainstorms, scaffolds, and builds web app prototypes using parallel AI agents.
+Work in Progress Tools — experimental capabilities under active development and testing.
 
-## Commands
+## Skills
 
-| Command | Description |
-|---------|-------------|
+| Skill | Description |
+|-------|-------------|
 | `/mvp start` | Brainstorm an app idea, choose a tech stack, and scaffold the project |
 | `/mvp build` | Build the prototype autonomously (resumes from saved state if prior progress exists) |
 | `/mvp status` | View current progress dashboard |
 | `/mvp summary` | Generate an HTML analytics page of the build process |
+
+> `/mvp` uses `disable-model-invocation: true` — it is only triggered by explicit `/mvp` invocation, never auto-matched to tasks.
 
 ## Supported Tech Stacks
 
@@ -109,9 +111,26 @@ The build orchestrator uses a main agent that coordinates subagents:
 - **Worktree isolation** (`isolation: "worktree"`) is the default for agents touching more than 2 files; worktrees are merged back before quality review runs
 - **PID lifecycle tracking** — all background processes started by subagents are tracked, verified by command name, and swept clean at phase boundaries and session start
 
-## Stack Conventions
+## Skill Structure
 
-Stack-specific standing rules stored in `commands/mvp/conventions/` and injected into every agent prompt:
+```
+skills/mvp/
+├── SKILL.md                        # Router + shared conventions
+├── references/
+│   ├── start.md                    # START mode instructions
+│   ├── build.md                    # BUILD mode instructions
+│   ├── status.md                   # STATUS mode instructions
+│   ├── summary.md                  # SUMMARY mode instructions
+│   ├── conventions/
+│   │   ├── elixir.md               # Elixir/Phoenix mandatory rules
+│   │   ├── elixir-patterns.md      # LiveView, Context, DaisyUI patterns (core/polish phases only)
+│   │   └── typescript.md           # TypeScript/React mandatory rules
+│   └── settings/
+│       ├── elixir.json             # Tool permissions for Elixir stack
+│       └── typescript.json         # Tool permissions for JS stack
+└── templates/
+    ├── brainstorm-template.md      # Template for .mvp/brainstorm.md
+    └── summary-template.html       # Template for analytics page
+```
 
-- `conventions/elixir.md` — Phoenix 1.8 rules, LiveView patterns, DaisyUI reference, test/factory patterns, Tidewave usage
-- `conventions/typescript.md` — TypeScript/React 19 rules including `verbatimModuleSyntax`/`import type`, API contract patterns, Drizzle, Tidewave, Playwright smoke test guidance
+Stack-specific conventions in `references/conventions/` are injected into every agent prompt during build. The `elixir-patterns.md` file (LiveView, Context, test, factory, and DaisyUI patterns) is loaded only for screen-building agents in the `core` and `polish` phases.

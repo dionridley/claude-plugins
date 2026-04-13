@@ -5,6 +5,25 @@ All notable changes to the Experimental plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-04-11
+
+### Changed
+- **Migrated `/mvp` from command to skill** — converted from legacy `commands/mvp.md` router pattern to skills 2.0 `skills/mvp/SKILL.md` with progressive disclosure. Mode files (start, build, status, summary) moved to `references/` directory. Templates moved into the skill directory.
+- **Plugin description updated** — now reads "Work in Progress Tools" to reflect the experimental nature of the plugin, not just the MVP builder.
+- **`${CLAUDE_PLUGIN_ROOT}` replaced with `${CLAUDE_SKILL_DIR}`** — all path references updated to use the skill-scoped variable.
+- **`<command-args>` replaced with `$ARGUMENTS`** — uses skills 2.0 argument substitution syntax.
+- **`disable-model-invocation: true`** — skill is only triggered by explicit `/mvp` invocation, never auto-matched to tasks.
+- **`effort: high` set in frontmatter** — build sessions default to high effort with a startup notice informing the user.
+- **Extracted DaisyUI + code patterns** from `conventions/elixir.md` into separate `references/elixir-patterns.md` — only loaded for screen-building agents in `core` and `polish` phases, reducing context for other agents.
+- **Fixed TypeScript conventions** — corrected Tidewave setup section to match actual scaffold (`tidewave/vite-plugin`, not middleware), removed duplicate project structure listing.
+- **Updated `allowed-tools`** — added `Agent`, `AskUserQuestion`, `TaskCreate`, `TaskUpdate`, `TaskGet`, `TaskList`; removed non-existent `Task` tool.
+- **Windows `cmd /c` wrapper for `.mcp.json`** — `npx` commands in generated `.mcp.json` are now wrapped with `cmd /c` on Windows to prevent MCP server startup warnings.
+- **Summary mode shows full absolute path** — `/mvp summary` now resolves and displays the full path to the generated HTML file so users can copy-paste it directly into a browser.
+
+### Removed
+- **`commands/` directory** — clean cut migration, no backwards compatibility shim.
+- **Root `templates/` directory** — templates now live inside the skill at `skills/mvp/templates/`.
+
 ## [0.5.1] - 2026-03-11
 
 ### Fixed

@@ -1,10 +1,10 @@
 # /mvp summary — Generate HTML Analytics Page
 
-This file is read by the main `mvp.md` router when the user runs `/mvp summary`.
+This file is loaded by the `/mvp` skill router when the user runs `/mvp summary`.
 
 ## Instructions for Claude
 
-You are executing the SUMMARY mode of the `/mvp` command. Your job is to generate a self-contained HTML analytics page from the project's state data.
+You are executing the SUMMARY mode of the `/mvp` skill. Your job is to generate a self-contained HTML analytics page from the project's state data.
 
 ---
 
@@ -24,7 +24,7 @@ You are executing the SUMMARY mode of the `/mvp` command. Your job is to generat
 
 2. **Read the brainstorm file** at `.mvp/[state.project.brainstormFile]` for project vision and notes.
 
-3. **Read the HTML template** at `${CLAUDE_PLUGIN_ROOT}/templates/summary-template.html`
+3. **Read the HTML template** at `${CLAUDE_SKILL_DIR}/templates/summary-template.html`
 
 ---
 
@@ -72,7 +72,7 @@ For each session in `analytics.sessionLog`:
 
 ## Phase 3: Generate HTML
 
-Take the template from `${CLAUDE_PLUGIN_ROOT}/templates/summary-template.html` and replace all placeholder markers with computed data.
+Take the template from `${CLAUDE_SKILL_DIR}/templates/summary-template.html` and replace all placeholder markers with computed data.
 
 **CRITICAL**: The HTML must be completely self-contained:
 - All CSS must be inline (in `<style>` tags)
@@ -160,15 +160,17 @@ Additionally, if the project has a suitable location for a web route:
 
 ## Phase 5: Show Result
 
+Resolve the **full absolute path** to the generated file so the user can copy-paste it directly into a browser address bar. Use `realpath .mvp/summary.html` (or `pwd` + relative path on Windows) to get it.
+
 Display:
 ```
 Analytics page generated!
 
-  File: .mvp/summary.html
+  File: [full absolute path to .mvp/summary.html]
   Size: [file size]
 
-  Open in browser:
-    open .mvp/summary.html
+  Paste this path in your browser to view:
+    [full absolute path to .mvp/summary.html]
 
   Contents:
     - Project overview with completion status

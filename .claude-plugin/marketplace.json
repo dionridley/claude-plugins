@@ -20,8 +20,8 @@
     {
       "name": "experimental",
       "source": "./experimental",
-      "description": "Autonomous MVP builder — brainstorm, scaffold, and build web app prototypes with parallel AI agents",
-      "version": "0.5.1"
+      "description": "Work in Progress Tools — experimental capabilities under active development and testing",
+      "version": "0.6.0"
     }
   ]
 }

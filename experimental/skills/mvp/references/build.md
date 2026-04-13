@@ -1,10 +1,10 @@
 # /mvp build — Autonomous Build Orchestrator
 
-This file is read by the main `mvp.md` router when the user runs `/mvp build`.
+This file is loaded by the `/mvp` skill router when the user runs `/mvp build`.
 
 ## Instructions for Claude
 
-You are executing the BUILD mode of the `/mvp` command. Your job is to:
+You are executing the BUILD mode of the `/mvp` skill. Your job is to:
 1. Load state, read conventions for the chosen stack
 2. Orchestrate subagents to build the prototype phase by phase
 3. Enforce testing, design quality, and browser testing gates
@@ -151,8 +151,8 @@ The project root is your current working directory for the entire session. You M
 
 Based on `state.project.stack`:
 
-- **Elixir:** Read `${CLAUDE_PLUGIN_ROOT}/commands/mvp/conventions/elixir.md`
-- **JS:** Read `${CLAUDE_PLUGIN_ROOT}/commands/mvp/conventions/typescript.md`
+- **Elixir:** Read `${CLAUDE_SKILL_DIR}/references/conventions/elixir.md`
+- **JS:** Read `${CLAUDE_SKILL_DIR}/references/conventions/typescript.md`
 
 Store the **"Mandatory Rules for Every Agent"** block from that file. You will inject it into EVERY subagent prompt for the remainder of this session under a `## [Stack] Conventions — MANDATORY` section.
 
@@ -294,6 +294,14 @@ fi
 2. **If phase status is "completed":** advance `currentPhase`, write `state.json`
 3. **If all phases complete:** go to Phase 11 (Completion)
 4. **If phase status is "pending":** set to "in_progress", record `startedAt`, write `state.json`
+
+### Create visual task list for the phase
+
+When entering a new phase, use TaskCreate for each task in the phase to populate the Claude Code UI task list:
+- Task name: `[Phase name] — [task name]`
+- Status: pending
+
+This gives the user real-time visual progress. Keep these in sync with `state.json` updates throughout the orchestration loop.
 
 ### User checkpoints at phase transitions
 
@@ -467,6 +475,7 @@ Before dispatching any agents:
 1. Read `.mvp/research/design-brief.md` — you will include an excerpt in every agent prompt
 2. Read the core feature tasks from the brainstorm document
 3. For Elixir: read all context module files in `lib/[slug]/` — extract function signatures to include in agent prompts
+4. For Elixir: read `${CLAUDE_SKILL_DIR}/references/conventions/elixir-patterns.md` — include relevant patterns in screen-building agent prompts
 
 **Agent dispatch rules:**
 - Maximum 3 concurrent agents
@@ -561,6 +570,7 @@ If Playwright MCP is not available (tools not present):
 Parallelizable by screen (each screen is independent).
 
 - Include design brief excerpt in each agent prompt
+- For Elixir: include relevant patterns from `${CLAUDE_SKILL_DIR}/references/conventions/elixir-patterns.md` in screen-building agent prompts
 - One agent per remaining screen
 - One additional agent for global responsive/accessibility polish if needed
 - **Run per-screen browser tests** (same as `core` phase) for every new screen built in this phase — use the same browser test agent template including empty state and error path steps
@@ -707,13 +717,14 @@ For each phase (following the phase-specific logic above), repeat this loop:
 
 Execute directly. After each:
 1. Mark task `status: "completed"`, set `completedAt`
-2. Check checkbox in brainstorm.md
-3. Git commit:
+2. Update the corresponding TaskUpdate to `completed`
+3. Check checkbox in brainstorm.md
+4. Git commit:
    ```bash
    git add -A && git commit -m "mvp: [task description]"
    ```
-4. Increment `analytics.completedTasks`, `analytics.gitCommits`
-5. Write `state.json` immediately
+5. Increment `analytics.completedTasks`, `analytics.gitCommits`
+6. Write `state.json` immediately
 
 ### Step B: Dispatch subagent batch
 
@@ -721,6 +732,7 @@ For each delegatable task:
 
 1. **Acquire any needed locks** in `state.json`
 2. **Mark task as in_progress**, set `startedAt`, write `state.json`
+3. **Update the corresponding TaskUpdate to `in_progress`**
 3. **Build agent instructions:**
 
    ```
@@ -836,8 +848,9 @@ As each agent returns:
    - `completedAt`: now
    - `agentSpawn.completedAt`: now, `result`: from status
    - `filesChanged`: merged files list
-6. Increment `analytics.agentSpawns.total` and `.successful` or `.failed`
-7. Write `state.json` immediately
+6. **Update the corresponding TaskUpdate** — set to `completed` if success, or leave as `in_progress` if heading to quality review
+7. Increment `analytics.agentSpawns.total` and `.successful` or `.failed`
+8. Write `state.json` immediately
 
 ### Step D: Quality review
 
@@ -917,6 +930,7 @@ FAIL = critical issues that must be fixed first.
 
 **If PASS:**
 - Update `task.qualityReview`: `{ passed: true, reviewedAt: now, notes: "..." }`
+- **Update the corresponding TaskUpdate to `completed`**
 - Check off task in brainstorm.md
 - Git commit the agent's files:
   ```bash
@@ -928,7 +942,7 @@ FAIL = critical issues that must be fixed first.
 **If FAIL:**
 - Update `task.qualityReview`: `{ passed: false, retryCount: N, reviewedAt: now, issues: [...] }`
 - If `retryCount < 3`: set task back to "pending", update `resumePoint.notes` with failure context
-- If `retryCount >= 3`: set task to "failed", increment `analytics.failedTasks`, warn user and skip
+- If `retryCount >= 3`: set task to "failed", **update the corresponding TaskUpdate to `completed` with a note indicating failure**, increment `analytics.failedTasks`, warn user and skip
 - Write `state.json`
 
 ### Step E: Update brainstorm document and write agent log
