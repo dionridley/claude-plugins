@@ -5,6 +5,27 @@ All notable changes to the Project Management Plugin will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-04-14
+
+### Changed
+
+- **`/dr-research` converted from command to Skill 2.0** (`skills/dr-research/`) with major workflow and output improvements. Invocation is unchanged (`/dr-research [prompt]` or `/dr-research` for interactive mode); internals are fully rewritten.
+  - **Interactive research plan approval** — Before any research runs, Claude presents a structured plan (research type, context, key questions, strategy, sources, planned output files) and waits for user approval or adjustments
+  - **Research strategy selection** — Claude now picks an appropriate strategy (funnel, adversarial, temporal, multi-stakeholder) based on the research type, and asks the user when unclear
+  - **Deep-dive follow-up support** — Reference an existing research path (e.g., `/dr-research follow-up questions _claude/research/existing-topic-2026-01-15/`) to create a `deep-dives/` subfolder within the original research, with back-links to the parent index and an updated "Deep Dives" section on the parent
+  - **Adaptive output structure** — Output files are proposed in the plan and adapted to the research type. `recommendations.md` is only created when the research genuinely supports actionable next steps; topic-specific files (`comparison.md`, `implementation-guide.md`, `architecture.md`, etc.) are created when warranted rather than always
+  - **Confidence flags only on uncertain findings** — High-confidence findings are not marked; only findings based on limited sources, single blog posts, or potentially outdated information get a callout. Conflicting sources are documented inline with direct links so the reader can evaluate competing claims
+  - **Mermaid diagram support** — Encouraged for workflows, architecture, system interactions, comparisons, and dense technical concepts. Includes a reference file with 7 diagram patterns (flowchart, sequence, mindmap, block, quadrant, ER, gantt)
+  - **Circuit breaker pattern** — Claude works to completion without interrupting for normal complexity (contradictions, diverse viewpoints). It stops and asks the user only if the research premise is wrong or a discovery fundamentally changes the direction, capped at 1-2 interruptions maximum
+  - **Completion summary improvements** — Now includes a "What surprised me" insight, suggested deep-dive topics (only when genuinely warranted), and contextual follow-up actions tailored to the research type
+  - **`index.md` written last** — Ensures the overview accurately reflects everything that was produced; encourages a visual concept map via Mermaid
+  - **Extended thinking via `effort: max`** in skill frontmatter instead of inline instructions
+
+### Removed
+
+- **`commands/dr-research.md`** — Replaced by the new skill
+- **`templates/research-*-template.md`** — The 4 research template files are replaced by flexible reference guides in `skills/dr-research/references/` (research-methodology, output-formats, mermaid-patterns) plus annotated exemplars in `skills/dr-research/examples/`
+
 ## [1.4.1] - 2026-02-22
 
 ### Fixed

@@ -87,11 +87,11 @@ Initializes or updates project with standard directory structure and CLAUDE.md f
 
 ### `/dr-research`
 
-Conducts deep research with extended thinking and creates comprehensive multi-file documentation.
+Conducts deep research with extended thinking and creates comprehensive multi-file documentation. As of v1.5.0, this is a **Skill 2.0** (`skills/dr-research/`) rather than a command — invocation is unchanged, internals are significantly upgraded.
 
 **Usage:**
 ```bash
-/dr-research [detailed 10-15 line research prompt]
+/dr-research [detailed research prompt]
 ```
 
 **Interactive mode** (if no arguments provided):
@@ -99,6 +99,11 @@ Conducts deep research with extended thinking and creates comprehensive multi-fi
 /dr-research
 ```
 Claude will ask for research details.
+
+**Deep-dive follow-up** (reference an existing research directory):
+```bash
+/dr-research go deeper on webhook reliability _claude/research/stripe-integration-2026-01-15/
+```
 
 **Example:**
 ```bash
@@ -110,16 +115,26 @@ Focus on handling 100k+ daily transactions with high reliability.
 Include case studies from major platforms and common pitfalls to avoid.
 ```
 
-**What it does:**
-- Uses extended thinking to deeply analyze the research request
-- Creates timestamped directory in `_claude/research/`
-- Generates multiple interconnected markdown files:
-  - `index.md` - Overview and navigation
-  - `findings.md` - Core research findings
-  - `resources.md` - Links and references
-  - `recommendations.md` - Actionable recommendations
-- Cross-links all files for easy navigation
-- Provides summary of key insights
+**How it works:**
+
+1. **Plan approval** — Claude analyzes your prompt, identifies the research type and strategy, and presents a structured plan (key questions, sources to consult, planned output files). You approve or adjust before any research runs.
+
+2. **Research execution** — Claude runs the approved plan using parallel web searches where appropriate, with source triangulation and progressive depth. It works to completion without interrupting you except in rare cases (the research premise is wrong, or a discovery fundamentally changes direction).
+
+3. **Synthesis** — Claude writes the output files (findings first, index last), including Mermaid diagrams where they clarify workflows, architecture, or comparisons. Uncertain findings get a confidence flag; conflicting sources are documented inline with direct links.
+
+4. **Summary** — A concise completion message with key findings, a "What surprised me" insight, suggested deep-dive topics (when warranted), and contextual follow-up actions.
+
+**Output structure:**
+
+Adaptive to the research type, but typically:
+- `index.md` — Overview, key takeaways, optional visual concept map, file navigation
+- `findings.md` — Core analysis organized by topic, with diagrams, confidence flags, cross-cutting themes, and gaps
+- `resources.md` — Bibliography of all sources consulted
+- `recommendations.md` — Actionable next steps (only when the research supports them)
+- Topic-specific files (e.g., `comparison.md`, `implementation-guide.md`, `architecture.md`) — created when warranted
+
+**Deep-dive follow-ups** produce a `deep-dives/[slug]-[date]/` subfolder within the original research, with back-links to the parent and a "Deep Dives" section added to the parent's `index.md`.
 
 ### `/dr-prd`
 

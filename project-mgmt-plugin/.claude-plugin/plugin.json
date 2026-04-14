@@ -1,6 +1,6 @@
 {
   "name": "project-management",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "Structured project management with research, PRDs, and implementation plans",
   "author": {
     "name": "Dion Ridley",
@@ -16,9 +16,10 @@
   "license": "MIT",
   "commands": [
     "./commands/dr-init.md",
-    "./commands/dr-research.md",
     "./commands/dr-prd.md",
     "./commands/dr-plan.md"
   ],
-  "skills": []
+  "skills": [
+    "./skills/dr-research"
+  ]
 }
