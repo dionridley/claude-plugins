@@ -5,6 +5,30 @@ All notable changes to the Project Management Plugin will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-04-18
+
+### Changed
+
+- **`/dr-init` converted from command to Skill 2.0** (`skills/dr-init/`) with workflow and safety improvements. Invocation is unchanged (`/dr-init`); internals are fully rewritten.
+  - **Scope narrowed to plugin-managed content only** — `CLAUDE-template.md` no longer includes `## Project-Specific Commands` or `## Development Principles` sections. Those are software-project concerns handled by Claude Code's built-in `/init` (or by the user directly). State A's success message now suggests running `/init` alongside `/dr-init` for codebase-specific documentation
+  - **Diff preview before CLAUDE.md updates** — State B now shows a unified diff of every outdated or missing section before any write, so users can see exactly what will change
+  - **Git safety preflight** — before modifying an existing CLAUDE.md (State B or State C), the skill runs `git status --porcelain CLAUDE.md` and warns if there are uncommitted changes. The skill never runs git commands that modify state — commits are entirely the user's responsibility
+  - **Simplified State C flow** — appending to an existing CLAUDE.md is now a clean separator-based append rather than a crude concatenation with manual-reorganization guidance. Since plugin sections no longer overlap with typical project content, no merge is needed
+  - **Cross-platform via native tools** — all filesystem operations use `Read`/`Write`/`Edit`/`Glob` instead of shell utilities. The skill works identically on Windows, macOS, and Linux without relying on `mkdir`, `touch`, `ls`, `wc`, or `test`
+  - **Progressive disclosure** — state-specific logic lives in `references/state-a-fresh.md`, `references/state-b-update.md`, `references/state-c-uninitialized.md`. Section versioning scheme documented in `references/section-versioning.md` for maintainers and future contributors
+
+### Removed
+
+- **`commands/dr-init.md`** — Replaced by the new skill
+- **`templates/CLAUDE-template.md`** (plugin root) — Moved to `skills/dr-init/templates/CLAUDE-template.md` since it is specific to the init skill
+- **`## Project-Specific Commands` section** from `CLAUDE-template.md` — Out of scope for this plugin; users should run `/init` for codebase-specific documentation
+- **`## Development Principles` section** from `CLAUDE-template.md` — Generic software advice not tied to plugin features
+- **Bash permissions** no longer required by `/dr-init`: `Bash(mkdir:*)`, `Bash(ls:*)`, `Bash(touch:*)`, `Bash(wc:*)`, `Bash(test:*)` — all replaced by native Claude Code tools. The only Bash permission retained is `Bash(git status:*)` for the safety preflight
+
+### Added
+
+- **`skills/dr-init/`** — Full Skill 2.0 implementation with SKILL.md + 4 reference files + templates/
+
 ## [1.5.0] - 2026-04-14
 
 ### Changed

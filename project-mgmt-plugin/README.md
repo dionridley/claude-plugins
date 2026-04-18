@@ -65,7 +65,7 @@ See the [marketplace README](../README.md#installation) for installation instruc
 
 ### `/dr-init`
 
-Initializes or updates project with standard directory structure and CLAUDE.md file.
+Initializes or updates project with standard directory structure and CLAUDE.md file. As of v1.6.0, this is a **Skill 2.0** (`skills/dr-init/`) rather than a command — invocation is unchanged, internals are significantly upgraded.
 
 **Usage:**
 ```bash
@@ -82,7 +82,15 @@ Initializes or updates project with standard directory structure and CLAUDE.md f
   - `resources/` - User-provided reference materials
   - `research/` - Research documentation
 - Creates `.gitkeep` files in all leaf directories for git tracking
-- Generates or updates `CLAUDE.md` with project management guidelines
+- Generates or updates plugin-managed sections in `CLAUDE.md`
+- **Scope** — only manages plugin-specific sections (plan workflow, available commands, task completion protocol). For codebase-specific documentation (architecture, build/test/lint commands, coding conventions), run Claude Code's built-in `/init` alongside `/dr-init`
+- **Three detection states**:
+  - *Fresh* — no `CLAUDE.md` and no `_claude/`: scaffolds both from scratch
+  - *Already initialized* — plugin version marker present: verifies structure, compares section versions, offers a diff-preview of any outdated or missing sections before updating
+  - *Has CLAUDE.md, no plugin structure* — shows a full preview of what will be appended and asks before writing
+- **Diff preview** before any update to an existing `CLAUDE.md`
+- **Git safety preflight** — warns if `CLAUDE.md` has uncommitted changes before modifying it. The skill never runs git commands that modify state; commits are your responsibility
+- **Cross-platform** — uses native Claude Code tools (`Read`/`Write`/`Edit`/`Glob`) for all filesystem operations; works identically on Windows, macOS, and Linux
 - **Idempotent** - safe to run multiple times
 
 ### `/dr-research`
@@ -614,10 +622,12 @@ This will recreate any missing directories and `.gitkeep` files.
 
 **Problem**: CLAUDE.md contents changed after running commands.
 
-**Clarification**: The plugin NEVER modifies CLAUDE.md after initial creation (State A) or user-approved append (State C). If changes occurred:
-1. Check git history to see what changed
-2. A different tool or user may have modified it
-3. The plugin only creates/modifies CLAUDE.md during `/dr-init` with user consent
+**Clarification**: `/dr-init` is the only part of this plugin that ever writes to `CLAUDE.md`, and it always shows a preview and asks for confirmation before writing. It modifies `CLAUDE.md` in three cases, all user-approved:
+1. **Fresh scaffold** — creates the file from the plugin template when none exists
+2. **Section update** — rewrites plugin-managed sections when their version markers are outdated (diff shown first)
+3. **Append** — adds plugin-managed sections to the end of an existing `CLAUDE.md` that has no plugin structure yet (full preview shown first)
+
+If `CLAUDE.md` changed without you running `/dr-init`, check `git log -- CLAUDE.md` — a different tool, editor, or user likely made the change.
 
 ## Support
 
