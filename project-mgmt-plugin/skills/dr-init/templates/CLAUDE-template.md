@@ -3,8 +3,16 @@
   Template generated: {{CURRENT_DATE}}
 
   This file is yours to customize for your project.
+
+  Project-specific documentation (architecture, build/test/lint commands,
+  coding conventions, etc.) is NOT the responsibility of this plugin.
+  We recommend running Claude Code's built-in `/init` to have Claude scan
+  your codebase and add that content to this file. It will integrate
+  cleanly alongside the plugin-managed sections below.
+
   Sections managed by the plugin have version markers (e.g. <!-- section: name v1 -->).
   Running /dr-init will check these markers and offer to update outdated sections.
+  Content outside the plugin-managed sections is never modified by /dr-init.
 -->
 
 # CLAUDE.md
@@ -17,24 +25,17 @@ This project follows a structured approach to planning, documentation, and imple
 
 ```
 _claude/
-|-- docs/           # Technical documentation and architecture
-|   `-- .gitkeep
-|-- plans/          # Implementation plans
-|   |-- draft/      # Plans being developed or refined
-|   |   `-- .gitkeep
-|   |-- in_progress/ # Plans currently being implemented
-|   |   `-- .gitkeep
-|   `-- completed/  # Finished and archived plans
-|       `-- .gitkeep
-|-- prd/            # Product Requirement Documents
-|   `-- .gitkeep
-|-- resources/      # Reference materials and external docs
-|   `-- .gitkeep
-`-- research/       # Structured research output
-    `-- .gitkeep
+├── docs/              # Technical documentation and architecture
+├── plans/             # Implementation plans
+│   ├── draft/         #   — being developed or refined
+│   ├── in_progress/   #   — currently being implemented
+│   └── completed/     #   — finished and archived
+├── prd/               # Product Requirement Documents
+├── resources/         # Reference materials and external docs
+└── research/          # Structured research output
 ```
 
-**Note:** `.gitkeep` files ensure empty directories can be committed to git.
+**Note:** Each leaf directory contains a `.gitkeep` file so empty directories can be committed to git.
 
 ### Directory Purposes
 
@@ -119,38 +120,6 @@ Both PRDs and plans can be refined using the same commands. Use `/dr-prd @_claud
 **IMPORTANT - Date Handling:**
 When creating any document with dates or timestamps, ALWAYS check the system environment for the current date/time. NEVER use hardcoded or assumed dates.
 
-## Project-Specific Commands
-
-<!-- Add your project's build, test, lint, and development commands here -->
-
-**Build:**
-```bash
-# [Add your build command]
-```
-
-**Test:**
-```bash
-# [Add your test command]
-```
-
-**Lint:**
-```bash
-# [Add your lint command]
-```
-
-**Development:**
-```bash
-# [Add your development server command]
-```
-
-## Development Principles
-
-1. **Incremental Progress**: Build features incrementally with working code at each step
-2. **Documentation First**: Document plans and decisions before implementing major features
-3. **Test Coverage**: Write tests alongside implementation
-4. **Code Review**: Review changes before merging
-5. **Clear Communication**: Write clear commit messages and PR descriptions
-
 ## Task Completion Protocol
 <!-- section: task-completion-protocol v1 -->
 
@@ -170,4 +139,4 @@ The plan file must always reflect the current state of implementation. Never lea
 ---
 
 <!-- End of plugin-managed section -->
-<!-- Add project-specific instructions below -->
+<!-- Content above this line is managed by /dr-init. Content below is yours. -->
