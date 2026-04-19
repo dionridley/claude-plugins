@@ -5,6 +5,16 @@ All notable changes to the Project Management Plugin will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1] - 2026-04-18
+
+### Changed
+
+- **`/dr-research` tool alignment** — `skills/dr-research/SKILL.md` now uses native Claude Code tools instead of shelling out. `Bash(mkdir:*)` removed from `allowed-tools` (Write creates parent directories automatically); `Glob` added for existence checks (deep-dive path verification and `_claude/research/` presence check). Phase 3 step renamed from "Create the directory" to "Determine the output path" to reflect that directory creation is implicit in the first Write.
+
+### Removed
+
+- **`Bash(mkdir:*)` permission** from `/dr-research` — no longer needed
+
 ## [1.6.0] - 2026-04-18
 
 ### Changed
