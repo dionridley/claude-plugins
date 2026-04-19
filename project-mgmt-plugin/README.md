@@ -146,11 +146,11 @@ Adaptive to the research type, but typically:
 
 ### `/dr-prd`
 
-Creates a comprehensive Product Requirements Document with extended thinking.
+Creates or refines a Product Requirements Document with a structured discovery phase, adaptive sections per feature type, and safe refinement with backup, diff preview, and linked-plan detection. As of v1.7.0, this is a **Skill 2.0** (`skills/dr-prd/`) rather than a command — invocation is unchanged, internals are substantively upgraded.
 
-**Usage:**
+**Usage (CREATE mode):**
 ```bash
-/dr-prd [detailed 10-15 line feature description]
+/dr-prd [feature description]
 ```
 
 **Interactive mode:**
@@ -158,32 +158,61 @@ Creates a comprehensive Product Requirements Document with extended thinking.
 /dr-prd
 ```
 
-**Example:**
+**Usage (REFINE mode):**
 ```bash
-/dr-prd Real-time notification system for social media application.
-Needs to support push notifications, in-app notifications, and email digests.
-Must handle notification preferences, delivery tracking, and read receipts.
-Should support 1M+ users with <500ms delivery latency.
-Integration with iOS/Android apps and web client.
-Admin dashboard for monitoring delivery rates and user engagement.
-Need templates for common notification types and A/B testing capability.
+/dr-prd @_claude/prd/[file].md [refinement request] [--no-confirm]
 ```
 
-**What it does:**
-- Uses extended thinking to analyze requirements and edge cases
-- Creates PRD in `_claude/prd/` with comprehensive sections:
-  - Executive Summary
-  - Problem Statement
-  - Goals and Non-Goals
-  - User Stories
-  - Functional Requirements
-  - Non-Functional Requirements
-  - Technical Considerations
-  - Success Metrics
-  - Open Questions
-  - Timeline
-- Thoughtfully fills ALL sections (not just placeholders)
-- Identifies risks and dependencies
+**Example (traditional feature):**
+```bash
+/dr-prd Real-time notification system for our social media app.
+Support push notifications, in-app notifications, and email digests.
+Must handle notification preferences, delivery tracking, and read receipts.
+Target 1M+ users with <500ms delivery latency.
+```
+
+**Example (AI feature):**
+```bash
+/dr-prd AI-powered reply drafter for our customer support inbox.
+Drafts a reply from the customer message, our KB, and similar tickets.
+Agents edit before sending — never auto-send. Factual accuracy against
+the KB, warm + concise tone, and no hallucinated features are the must-haves.
+```
+
+**How it works:**
+
+1. **Clarifying phase** — hybrid fixed core (problem, users, success metrics, feature type) plus adaptive follow-ups. Compresses automatically when your description is already rich. Designed to prevent generic, hallucinated, or shallow PRDs. If your answers stay thin on the core questions, the skill surfaces a non-blocking nudge (run `/dr-research`, brainstorm, share `@path` references, or proceed and flag assumptions).
+
+2. **Feature-type detection** — infers one of `user-facing`, `internal-tool`, `infra`, `ai-feature`, or `spike`, confirms with you, then adapts the template. AI features get additional sections: Model & Constraints, Prompt Spec, Eval Rubric (replacing Acceptance Criteria), Performance Budgets, and Guardrails.
+
+3. **Drafting** — populates the base template with a Problem → Hypothesis → Success Metrics framing, testable Acceptance Criteria that `/dr-plan` consumes directly, and Open Questions in `owner: X, needs by: Y` format. Only incorporates research or context you reference explicitly via `@path` — the skill never proactively searches `_claude/research/`.
+
+4. **REFINE mode** — automatic backup, diff preview, explicit confirmation (Apply / Show Diff / Cancel), status-aware warnings (Draft / Under Review / Approved / Superseded), and bidirectional linked-plan detection. PRDs written under the old template are refined without structural change unless you explicitly request migration (e.g., "migrate this to the new template").
+
+**Output location:** `_claude/prd/[feature-slug].md`
+
+**Base template sections:**
+- Metadata (status, version, dates, author, feature type)
+- Problem Statement
+- Hypothesis (with a testable signal)
+- Success Metrics
+- User Stories
+- Functional Requirements (Core + optional Enhancements)
+- Acceptance Criteria (testable bullets for `/dr-plan`) — replaced by Eval Rubric for AI features
+- Technical Considerations
+- Dependencies
+- Release Strategy (one-liner; detailed delivery planning lives in `/dr-plan`)
+- Risks and Mitigation
+- Open Questions (with owner and due-by)
+- References
+- Refinement History
+
+**AI-feature overlay (when detected):**
+- Model and Constraints (primary + fallback model, context window, streaming, output shape)
+- Prompt Spec (system prompt draft, input/output schemas, optional few-shot)
+- Eval Rubric (dimensions with measurable targets and measurement methods, plus a regression threshold)
+- Performance Budgets (p50/p95/p99 latency, cost-per-query, token caps, breach policy)
+- Guardrails (must-refuse categories, refusal style, jailbreak resistance, PII, content moderation)
 
 ### `/dr-plan`
 

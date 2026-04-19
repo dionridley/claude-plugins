@@ -5,6 +5,42 @@ All notable changes to the Project Management Plugin will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-04-18
+
+### Changed
+
+- **`/dr-prd` converted from command to Skill 2.0** (`skills/dr-prd/`) with substantive workflow improvements. Invocation is unchanged (`/dr-prd`); internals are fully rewritten.
+  - **Clarifying-question phase in CREATE mode** — hybrid fixed core (problem, users, success metrics, feature type) plus adaptive follow-ups. Compresses automatically when the initial prompt is already rich. Designed to prevent generic, hallucinated, or shallow PRDs.
+  - **Non-blocking nudge on thin answers** — when the user can't answer 2+ core questions clearly, the skill surfaces options (run `/dr-research`, brainstorm, share context, or proceed and flag assumptions) without blocking.
+  - **Confidence checkpoint before drafting** — conversational, not numeric. Surfaces fuzzy areas and asks whether to clarify or flag.
+  - **User-provided research/context only** — the skill does not proactively Glob `_claude/research/` or any other directory. Users reference material explicitly via `@path`.
+  - **Problem → Hypothesis → Outcome framing** at the top of every PRD. Aligns with modern PRD practice (Cagan, Lenny).
+  - **Adaptive template by feature type** — `user-facing`, `internal-tool`, `infra`, `ai-feature`, and `spike` each include/skip/replace sections appropriately. Feature type is inferred then confirmed with the user; falls back to asking if inference fails.
+  - **Timeline & Milestones demoted** to a one-line `Release Strategy` section (delivery planning lives in `/dr-plan`, not the PRD).
+  - **Top-level `Acceptance Criteria` section** — testable bullets that `/dr-plan` consumes directly as test-first tasks.
+  - **AI-feature overlay** — for `ai-feature` type, adds `Model and Constraints`, `Prompt Spec`, `Eval Rubric` (replaces Acceptance Criteria for probabilistic outputs), `Performance Budgets`, and `Guardrails`. `/dr-plan` reads these to generate eval scaffolding, prompt-test, load-test, and red-team tasks.
+  - **Open Questions format** — now `[ ] Question — owner: [name], needs by: [YYYY-MM-DD]` so the section stays actively useful rather than ritual.
+  - **REFINE mode safety features preserved** — backup, diff preview, confirm gate (`AskUserQuestion`), status-aware warnings (Draft / Under Review / Approved / Superseded), bidirectional linked-plan detection. These remain the strongest parts of the original command.
+  - **Old-template preservation on refine** — existing PRDs authored under the old template are refined without structural changes unless the user explicitly asks to migrate (e.g., "migrate this to the new template"). Migration maps old sections to new and flags inferred content in Open Questions.
+  - **Cross-platform via native tools** — all filesystem operations use `Read`/`Write`/`Edit`/`Glob`/`Grep` instead of shell utilities. Works identically on Windows, macOS, and Linux.
+  - **Progressive disclosure** — mode-specific logic in `references/create-mode.md` and `references/refine-mode.md`; shared logic in `references/template-variants.md` and `references/ai-feature-sections.md`.
+
+### Added
+
+- **`skills/dr-prd/`** — Full Skill 2.0 implementation with SKILL.md + 4 reference files + new base template
+  - `SKILL.md` — mode detection and routing
+  - `references/create-mode.md` — clarifying phase + drafting flow
+  - `references/refine-mode.md` — validate + backup + diff + confirm + apply flow
+  - `references/template-variants.md` — feature-type detection and section-inclusion rules
+  - `references/ai-feature-sections.md` — AI/LLM overlay (model, prompt spec, eval rubric, performance budgets, guardrails)
+  - `templates/prd-base.md` — new base template
+
+### Removed
+
+- **`commands/dr-prd.md`** — replaced by the new skill
+- **`templates/prd-template.md`** (plugin root) — replaced by `skills/dr-prd/templates/prd-base.md` with a restructured section order and new Hypothesis / Acceptance Criteria / Release Strategy sections
+- **Bash permissions** no longer required by `/dr-prd`: `Bash(ls:*)`, `Bash(cp:*)`, `Bash(mkdir:*)` — all replaced by native Claude Code tools (`Glob` for listing, `Read`+`Write` for backups, `Write` auto-creates parent directories)
+
 ## [1.6.1] - 2026-04-18
 
 ### Changed
