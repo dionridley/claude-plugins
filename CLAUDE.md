@@ -18,19 +18,21 @@ claude-plugins/
 ├── project-mgmt-plugin/       # Main project management plugin
 │   ├── .claude-plugin/
 │   │   └── plugin.json        # Plugin manifest
-│   ├── commands/              # Slash commands (.md files)
-│   │   ├── dr-init.md
-│   │   ├── dr-research.md
-│   │   ├── dr-prd.md
+│   ├── commands/              # Remaining slash commands (.md files)
 │   │   ├── dr-plan.md         # Multi-mode: CREATE, REFINE, SUMMARY, QUESTION RESOLUTION
-│   │   ├── dr-plan/           # Subfolder for mode-specific logic
-│   │   │   ├── summary.md
-│   │   │   └── questions.md
-│   │   └── dr-move-plan.md
-│   ├── skills/
-│   │   └── frontend-design/   # UI/frontend design skill
-│   └── templates/             # Markdown templates for generated files
+│   │   └── dr-plan/           # Subfolder for mode-specific logic
+│   │       ├── summary.md
+│   │       └── questions.md
+│   ├── skills/                # Skill 2.0 directories
+│   │   ├── dr-init/           # Project structure initialization (invoked as /dr-init)
+│   │   ├── dr-research/       # Deep research with web search (invoked as /dr-research)
+│   │   └── dr-prd/            # PRD creation and refinement (invoked as /dr-prd)
+│   └── templates/             # Shared templates for remaining commands (e.g., plan-template.md)
+├── engineering-tools/         # Engineering-tools plugin (includes frontend-design, react-19 skills)
+└── experimental/              # Experimental plugin (MVP builder)
 ```
+
+Note: `/dr-init`, `/dr-research`, and `/dr-prd` are implemented as Skills 2.0 with `disable-model-invocation: true` — they are invoked explicitly via their slash-command names, not auto-discovered by Claude. Only `/dr-plan` remains a traditional slash command.
 
 ## Plugin Architecture
 
@@ -74,10 +76,13 @@ The main command detects mode from args and reads the appropriate subfolder file
 
 | Aspect | Slash Command | Skill |
 |--------|---------------|-------|
-| Trigger | Manual `/command` | Auto-discovered by Claude |
-| Structure | Single .md file | Directory with SKILL.md |
-| Arguments | Supports `<command-args>` | Context-driven |
-| Use when | User wants explicit control | Claude should autonomously use |
+| Structure | Single .md file | Directory with `SKILL.md` + optional `references/`, `templates/`, `scripts/`, `examples/` |
+| Arguments | Supports `<command-args>` tag | Uses `$ARGUMENTS` in SKILL.md |
+| Progressive disclosure | Single file loads fully | `SKILL.md` routes; reference files load on demand via `${CLAUDE_SKILL_DIR}/...` |
+| Auto-discovery | N/A — always explicit | On by default; set `disable-model-invocation: true` to make the skill explicit-only (invoked via `/skill-name`) |
+| Use when | Simple one-shot workflow with a single set of instructions | Multi-phase or multi-mode workflow that benefits from progressive disclosure; or a workflow Claude should be able to auto-discover |
+
+The project-management plugin's three Skills (`dr-init`, `dr-research`, `dr-prd`) all use `disable-model-invocation: true` — they behave like slash commands from a user's perspective (invoked explicitly as `/dr-init`, `/dr-research`, `/dr-prd`) but benefit from the Skill 2.0 directory structure and progressive-disclosure pattern internally.
 
 ### Skill Structure
 
