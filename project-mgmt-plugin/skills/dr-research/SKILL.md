@@ -2,7 +2,7 @@
 name: dr-research
 description: Conducts deep research on a topic with web search, extended thinking, and structured documentation. Use when the user asks to research a topic, investigate a technology, compare approaches, or gather information for a decision. Produces organized markdown files with findings, visual diagrams, and actionable insights in _claude/research/.
 disable-model-invocation: true
-allowed-tools: WebSearch WebFetch Read Write Bash(mkdir:*)
+allowed-tools: WebSearch WebFetch Read Write Glob
 effort: max
 argument-hint: [detailed research prompt — can reference existing research path for deep dives]
 ---
@@ -27,7 +27,7 @@ Use `$ARGUMENTS` as the research prompt. If `$ARGUMENTS` is empty, ask the user 
 
 Check whether the user is referencing existing research for a follow-up:
 
-- **File/directory path provided** pointing to an existing `_claude/research/` directory → this is a **deep-dive follow-up**. Read the existing `index.md` and `findings.md` to understand prior coverage.
+- **File/directory path provided** pointing to an existing `_claude/research/` directory → this is a **deep-dive follow-up**. Verify the path exists with Glob, then read the existing `index.md` and `findings.md` to understand prior coverage.
 - **No file reference** → this is **new research**, regardless of whether the user uses phrases like "deep dive" or "go deeper." Those phrases describe desired depth, not a follow-up.
 - A file reference that exists in `_claude/research/` is the key identifier. Language alone is not sufficient to trigger deep-dive mode.
 
@@ -134,12 +134,14 @@ Maximum 1-2 interruptions in exceptional cases. Zero in most research runs. The 
 
 Read `${CLAUDE_SKILL_DIR}/references/output-formats.md` for detailed guidance on what each file should contain, quality standards, and example structures. For annotated examples of what great output looks like, see `${CLAUDE_SKILL_DIR}/examples/exemplar-index.md` and `${CLAUDE_SKILL_DIR}/examples/exemplar-findings.md`.
 
-### Create the directory
+### Determine the output path
+
+The Write tool creates parent directories automatically — don't shell out to `mkdir`. Just decide the target path and write files to it.
 
 - **New research:** `_claude/research/[slug]-[date]/`
   - Create the slug from the topic: lowercase, hyphens for spaces, remove special characters
   - Use the current date from the conversation context (YYYY-MM-DD)
-  - If `_claude/research/` doesn't exist, inform the user they can run `/dr-init` for full project setup, but proceed with creating the directory
+  - Use Glob to check whether `_claude/research/` already exists. If it doesn't, inform the user they can run `/dr-init` for full project setup, but proceed — the first Write will create it.
 - **Deep dive:** `_claude/research/[parent-slug]-[date]/deep-dives/[deep-dive-slug]-[date]/`
 
 ### Write the files
