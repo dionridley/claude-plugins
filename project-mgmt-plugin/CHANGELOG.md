@@ -5,6 +5,54 @@ All notable changes to the Project Management Plugin will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-04-20
+
+### Changed
+
+- **`/dr-plan` converted from command to Skill 2.0** (`skills/dr-plan/`) with substantive workflow improvements. This completes the project-mgmt command-to-skill migration started in #16, #17, #18, and #19. Invocation is unchanged (`/dr-plan`); internals are fully rewritten.
+  - **Four-block per-phase structure** — every phase now has Tasks / Verification / Acceptance Criteria / Phase Exit Gate blocks. Replaces the old Tasks-only-plus-maybe-tests structure. Designed to prevent "false completion" where an agent reports done without actual verification.
+  - **Three-layer criteria framing** — plan-level `Success Criteria` + per-phase `Acceptance Criteria` + universal `Definition of Done` block. DoD is populated at create-time from the project's config files (`CLAUDE.md`, `AGENTS.md`, `package.json`, `Cargo.toml`, etc.) and referenced by every Phase Exit Gate.
+  - **Strict DoD discipline** — every phase must leave the codebase shippable (tests/lint/typecheck green at every phase boundary). CREATE mode restructures phases to satisfy this rather than allowing broken intermediate states. Rare interim phases (when restructuring is genuinely impossible) are marked with `<!-- interim-phase: ... -->` and a prominent "DO NOT MERGE BEFORE PHASE N" callout.
+  - **Autonomous execution principle** — plans are designed to execute to completion without user intervention unless something goes wrong. Phase Exit Gates are self-discipline encoded in the artifact, not user checkpoints. Up to 2 retries (3 total attempts) before escalation.
+  - **Adaptive template system** — default `standard-feature` applied silently. Four overlays (`ai-feature`, `migration/infra/refactor`, `bug-fix`, `spike`) announce-and-confirm only when detection signals are present. Overlays add phases (Eval Rubric Setup, Verify-in-Prod), add sections (Rollback Plan, Entry Preconditions), or omit sections (Dependencies for bug fixes).
+  - **Auto-detect current-branch PR in SUMMARY mode** — `/dr-plan @plan summary` now runs `gh pr view --json ...` to detect an open PR on the current branch and prompts (Push to PR / Display only / Cancel) before generating the summary, saving tokens on Cancel. Explicit URL invocation preserved for back-compatibility.
+  - **Time estimates removed** — the old `**Estimated Time:** [X hours]` per-phase marker is gone. Task granularity replaces time as the planning signal.
+  - **Implementation Notes section removed** — `Actual Time / Key Decisions / Assumptions Validated / Lessons Learned` is replaced by the new `Retro` section (populated autonomously on completion) and `Refinement History` (captures decisions as they happen).
+  - **Autonomous completion + retro** — plans carry their own completion instructions at the bottom. After the final Phase Exit Gate passes, the executing agent writes a three-slot retro (What worked / What didn't / Learnings) from observable signals and moves the file from `in_progress/` to `completed/`. No user prompt required.
+  - **Old-template preservation on refine** — existing plans authored under the old template are refined without structural changes unless the user explicitly opts into migration. Default is surgical refinement.
+  - **Native tools over Bash** — filesystem operations use `Read`, `Write`, `Edit`, `Glob`, `Grep`. Only `Bash(gh pr view:*)` and `Bash(gh pr edit:*)` remain for SUMMARY mode.
+  - **Progressive disclosure** — mode-specific logic lives in `references/create-mode.md`, `references/refine-mode.md`, `references/summary-mode.md`, `references/questions-mode.md`. Shared logic in `references/template-variants.md`.
+
+### Added
+
+- **`skills/dr-plan/`** — Full Skill 2.0 implementation with `SKILL.md` + 5 reference files + 5 template files
+  - `SKILL.md` — four-way mode routing (CREATE / REFINE / SUMMARY / QUESTION RESOLUTION)
+  - `references/create-mode.md` — gather → detect plan type → analyze → populate DoD → structure phases → annotate gates → write
+  - `references/refine-mode.md` — validate → detect template generation → back up → generate → diff → confirm → apply (with opt-in old-template migration)
+  - `references/summary-mode.md` — auto-detect current-branch PR, prompt-before-generate, push-or-display routing
+  - `references/questions-mode.md` — blocking Q&A → non-blocking + Execution Policy as a group → assumption verification → automatic Phase Exit Gate regeneration on policy change
+  - `references/template-variants.md` — overlay detection signals (PRD type + keywords + repo signals) and overlay composition rules
+  - `templates/plan-base.md` — standard-feature baseline
+  - `templates/plan-ai-feature.md` — AI/LLM overlay (Eval Rubric Setup phase, Model/Prompt Selection phase, AI-specific Acceptance Criteria patterns)
+  - `templates/plan-migration.md` — Migration/infra overlay (Rollback Plan section, Entry Preconditions per phase, Verify-in-Prod phase)
+  - `templates/plan-bug-fix.md` — Bug-fix overlay (collapsed phases, Dependencies dropped)
+  - `templates/plan-spike.md` — Spike overlay (Questions to Answer instead of Success Criteria, relaxed DoD, time-box)
+- **`agents/plan-verifier.md`** — Fresh-context verifier subagent that independently evaluates whether a phase completed successfully. Reads code, runs verification commands, and reports PASS/FAIL/UNVERIFIED per task and acceptance criterion. Never modifies code or plans — reports only. Tool boundaries (`Read`, `Grep`, `Glob`, `Bash` only) enforce the "reports-only" contract at the tool level, not just the prompt level.
+- **Execution Policy** — new subsection under `Open Questions & Decisions` in every plan. `Verification Policy` (Always / Adaptive / Never) is permanently tunable — it stays `[OPEN]` across the plan's life rather than terminally `[DECIDED]`. Changing it from QUESTION RESOLUTION mode automatically regenerates every Phase Exit Gate block to match, non-destructively of any `[x]` progress.
+- **Per-phase verifier annotations** — in Adaptive policy (default), each phase's Phase Exit Gate carries an HTML-comment annotation `<!-- verifier-recommendation: yes|no — [reasoning] -->` written at create-time based on the phase's risk/complexity. The Spawn-verifier + Apply-report tasks render only when the recommendation is yes.
+
+### Fixed
+
+- **REFINE backup gap closed** — before writing refined content, the original plan is backed up to `.[filename].backup`. The old command removed backup behavior in v1.3.0; this restores it (single-level overwrite, consistent with `/dr-prd`'s backup behavior).
+
+### Removed
+
+- **`commands/dr-plan.md`** — replaced by the new skill
+- **`commands/dr-plan/summary.md`** and **`commands/dr-plan/questions.md`** — replaced by `skills/dr-plan/references/summary-mode.md` and `skills/dr-plan/references/questions-mode.md`
+- **`templates/plan-template.md`** (plugin root) — replaced by `skills/dr-plan/templates/plan-base.md`
+- **`templates/` directory** (plugin root) — empty after the above moves
+- **Bash permissions** no longer required by `/dr-plan`: `Bash(ls:*)`, `Bash(mkdir:*)` — replaced by native Claude Code tools (`Glob` for listing, `Write` auto-creates parent directories). Retained: `Bash(gh pr view:*)`, `Bash(gh pr edit:*)` (no native equivalent)
+
 ## [1.7.0] - 2026-04-18
 
 ### Changed
