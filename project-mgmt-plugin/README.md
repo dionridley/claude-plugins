@@ -216,7 +216,7 @@ the KB, warm + concise tone, and no hallucinated features are the must-haves.
 
 ### `/dr-plan`
 
-Creates detailed implementation plan OR refines existing plan using extended thinking. Supports multi-mode operation.
+Creates or refines detailed implementation plans with per-phase acceptance criteria, verification gates, adaptive templates, and autonomous completion. Supports four modes: CREATE / REFINE / SUMMARY / QUESTION RESOLUTION. As of v1.8.0, this is a **Skill 2.0** (`skills/dr-plan/`) rather than a command — invocation is unchanged, internals are substantively upgraded.
 
 **CREATE Mode - Usage:**
 ```bash
@@ -314,20 +314,14 @@ When a PR URL is provided:
 ```
 
 **CREATE Mode - What it does:**
-- Automatically assigns sequential plan number (001, 002, 003, etc.)
-- Scans ALL plan folders (draft, in_progress, completed) to find the highest existing number
-- If PRD referenced via `@path`, reads and analyzes it
-- Uses extended thinking to break down implementation
-- Creates plan file: `_claude/plans/draft/XXX-plan-name.md` (or `in_progress/` if flag used)
-- Includes metadata with creation date, status, and PRD reference
-- Comprehensive sections:
-  - Executive Summary
-  - Current State
-  - Success Criteria
-  - Implementation Plan (phases with tasks, time estimates, test verification)
-  - Rollback Plan
-  - Dependencies
-  - Success Metrics
+- Automatically assigns sequential plan number (001, 002, 003, etc.) by scanning ALL plan folders.
+- If PRD referenced via `@_claude/prd/[file].md`, the expanded PRD drives the plan's shape.
+- **Detects plan type with silent default** — `standard-feature` applied silently; four overlays (`ai-feature`, `migration/infra/refactor`, `bug-fix`, `spike`) only announce-and-confirm when detection signals are present (keywords, repo signals, or PRD feature type).
+- **Populates Definition of Done** from project config files (`CLAUDE.md`, `AGENTS.md`, `package.json`, `Cargo.toml`, etc.) — the test/lint/typecheck commands every phase must satisfy.
+- **Structures every phase with four blocks:** Tasks / Verification (commands with expected output) / Acceptance Criteria (testable outcomes) / Phase Exit Gate (DoD check + optional verifier + agent self-review).
+- **Annotates Phase Exit Gates adaptively** — each phase carries a `<!-- verifier-recommendation: yes|no -->` comment based on risk/complexity. Spawn-verifier tasks render only when the recommendation is yes (or when Verification Policy is set to `Always`).
+- **Emits autonomous completion instructions** — every plan has `## Completion` and `## Retro` sections at the bottom. After the final Phase Exit Gate passes, the executing agent writes the retro and moves the file from `in_progress/` to `completed/` without prompting.
+- Creates the plan at `_claude/plans/draft/XXX-plan-name.md` (or `in_progress/` with `--in-progress`).
 
 **REFINE Mode - What it does:**
 - **Reads existing plan**: Analyzes current structure, phases, and content
@@ -360,6 +354,12 @@ When a PR URL is provided:
 - Plans are numbered sequentially: 001, 002, 003, ..., 999, 1000, ...
 - Numbers are preserved when moving between folders
 - Finds highest number across ALL folders (handles case where all plans are in completed/)
+
+### Tuning the plan verifier
+
+`/dr-plan` ships with a dedicated verifier agent at `agents/plan-verifier.md`. It runs at Phase Exit Gates (always under `Verification Policy: Always`, or per-phase under the default `Adaptive`) to independently evaluate whether a phase actually completed — it reads the code, runs the Verification commands, and reports PASS / FAIL / UNVERIFIED per task and Acceptance Criterion. It never modifies code or plans; tool access is restricted to `Read / Grep / Glob / Bash` at the tool level, not just the prompt level.
+
+The agent is a deliberate iteration surface. Common tuning dimensions: skepticism level (how readily `UNVERIFIED` is chosen over `PASS`), evidence thresholds (what counts as direct evidence vs. inference), and the scope boundary (keeping it out of architecture advice). Contributions welcome via PR.
 
 ## Moving Plans Between Stages
 
