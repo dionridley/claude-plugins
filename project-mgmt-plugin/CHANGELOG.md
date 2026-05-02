@@ -5,6 +5,17 @@ All notable changes to the Project Management Plugin will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-04-22
+
+### Changed
+
+- **Model invocation enabled for `dr-plan`** — flipped `disable-model-invocation` from `true` to `false` on `dr-plan` only, so it fires when `/dr-plan` appears mid-message (not only at line-start) or when the user explicitly asks to create, refine, or summarize a plan file under `_claude/plans/`. Description rewritten with an anchored positive trigger (the slash-token, or a request to write to `_claude/plans/`) and an explicit negative clause (general planning discussion, brainstorming, outlines) to minimize false positives. `dr-init`, `dr-prd`, and `dr-research` remain explicit-only — the noisier verbs ("research," "PRD") showed conversational-precedent drift in testing (once invoked explicitly, subsequent vague requests were incorrectly captured by the skill), and the prompt-to-copy workflow (agent suggests the explicit invocation, user runs it) is lower-friction than fighting that drift.
+
+### Added
+
+- **Trigger Validation block in `dr-plan/SKILL.md`** — runs before Mode Detection to guard against conversational-precedent drift. Proceeds only when the current message contains the literal `/dr-plan` token or explicitly requests a plan file under `_claude/plans/`; otherwise briefly asks the user to confirm intent. Insurance against the same drift pattern that pushed `dr-prd`/`dr-research` back to explicit-only.
+- **Conversation-context harvest in CREATE mode** — `references/create-mode.md` Phase 1 now detects the mid-conversation trigger path. When `$ARGUMENTS` is empty, whitespace, or a trivial pronoun ("this") AND the preceding conversation has substantive context, the skill summarizes that context back to the user for confirmation instead of asking them to restate what they just discussed. Eliminates the jarring "what would you like to implement?" prompt after a user says *"ok, let's /dr-plan this."* Falls back to the original prompt when no prior context exists.
+
 ## [1.8.0] - 2026-04-20
 
 ### Changed
