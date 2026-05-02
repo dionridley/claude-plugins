@@ -6,14 +6,24 @@ The flow is: gather → detect plan type → determine number → analyze → po
 
 ## Phase 1: Gather the Implementation Context
 
-### Read `$ARGUMENTS`
+### Read `$ARGUMENTS` and conversation context
 
-- If `$ARGUMENTS` has content → use it as the starting context.
-- If `$ARGUMENTS` is empty or only whitespace → ask:
+Determine the starting context using this precedence:
+
+- **`$ARGUMENTS` has substantive content** → use it directly as the starting context.
+- **`$ARGUMENTS` is empty, whitespace-only, or trivially short (a pronoun like "this" or "it") AND the preceding conversation contains substantive context about what's being planned** → summarize that context back to the user:
+
+  > Based on our conversation, I understand you want to plan: [concise summary of the work from the preceding conversation — include any referenced PRDs, constraints, or decisions].
+  >
+  > Should I proceed with this as the starting context, or do you want to adjust it before I draft?
+
+  Wait for confirmation or correction before continuing.
+
+- **`$ARGUMENTS` is empty AND there's no useful prior conversation context** → ask:
 
   > What would you like to implement? Share as much or as little as you'd like — describe the work, the why, any constraints, and reference a PRD with `@_claude/prd/[file].md` if you have one.
 
-Wait for the user's response before continuing.
+  Wait for the user's response before continuing.
 
 ### Check for flags and PRD reference
 

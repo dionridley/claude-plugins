@@ -1,7 +1,7 @@
 ---
 name: dr-plan
-description: Create or refine a detailed implementation plan with per-phase acceptance criteria, verification gates, and safe refinement. Supports four modes — CREATE (new plan), REFINE (edit existing), SUMMARY (PR summary with optional push to current branch's PR), QUESTION RESOLUTION (interactive Q&A for open questions and execution policy). Use when the user wants to plan implementation work in _claude/plans/.
-disable-model-invocation: true
+description: Create or refine a detailed implementation plan file in `_claude/plans/` with per-phase acceptance criteria, verification gates, and safe refinement. Supports four modes: CREATE, REFINE, SUMMARY (PR summary, optional push to PR), and QUESTION RESOLUTION (interactive Q&A). Use when the user writes `/dr-plan` anywhere in their message, or explicitly asks to create, refine, or summarize a plan file under `_claude/plans/`. Do NOT use for general planning discussion, brainstorming, outlines, or task lists not destined for a file in `_claude/plans/`.
+disable-model-invocation: false
 allowed-tools: Read Write Edit Glob Grep AskUserQuestion Bash(gh pr view:*) Bash(gh pr edit:*)
 effort: max
 argument-hint: [implementation context OR @plan-file [refinement|summary [pr-url]|answer questions]] [--no-confirm|--in-progress]
@@ -10,6 +10,14 @@ argument-hint: [implementation context OR @plan-file [refinement|summary [pr-url
 # Create or Refine an Implementation Plan
 
 This skill has four modes. Detect the mode from `$ARGUMENTS` first, then route to the correct reference file.
+
+## Trigger Validation
+
+Before mode detection, confirm this invocation is genuine and not conversational drift from an earlier `/dr-plan` use.
+
+- **If the user's current message contains the literal token `/dr-plan`** → proceed.
+- **If the user explicitly asked to create, refine, or summarize a plan file under `_claude/plans/` in this message** → proceed.
+- **Otherwise** → stop. Ask: *"Did you want to run /dr-plan, or should we keep discussing this inline?"* Only continue if they confirm.
 
 ## Mode Detection
 
