@@ -21,10 +21,16 @@ What exists today that this plan modifies or extends. For greenfield work, state
 
 ## Assumptions
 
-Mark `[x]` when validated. Mark `[?]` when uncertain and needing verification.
+Each assumption is in one of three states. The checkbox carries the validation state; `[?]` is a separate tag, not a checkbox value.
 
-- [ ] [Assumption 1]
-- [ ] [Assumption 2]
+- `- [ ] Assumption text` — pending. Will be validated implicitly as implementation exercises it.
+- `- [ ] [?] Assumption text` — uncertain. Surfaced by `/dr-plan answer questions` for explicit review.
+- `- [x] Assumption text` — validated. Confirmed by evidence (cite the source in the bullet).
+
+To validate an assumption, flip `[ ]` to `[x]`. Do **not** write `- [ ] [x] text` — `[x]` is the checkbox state, not a tag that sits next to `[ ]`. When validating a `[ ] [?]` line, drop the `[?]` as well: it becomes `- [x] text`.
+
+- [ ] Pending assumption text here
+- [ ] [?] Uncertain assumption text here — note where/when it will be verified
 
 ## Open Questions & Decisions
 

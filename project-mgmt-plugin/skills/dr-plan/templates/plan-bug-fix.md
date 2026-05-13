@@ -12,7 +12,7 @@ Sections to **collapse** (keep, but minimal):
 
 - **Executive Summary** — one paragraph: what's broken, where, impact.
 - **Current State** — the bug and how it reproduces. Link to the failing test, error log, or ticket if there is one.
-- **Assumptions** — usually one bullet: the root cause you're targeting. Mark `[?]` if you're not certain.
+- **Assumptions** — usually one bullet: the root cause you're targeting. If you're not certain, tag it with `[?]` next to the checkbox: `- [ ] [?] Root cause is X`. See `plan-base.md` for the full three-state convention.
 - **Success Criteria** — typically two bullets: bug no longer reproduces; regression test added.
 
 ## Phase collapse
