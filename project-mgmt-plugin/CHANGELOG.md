@@ -5,6 +5,12 @@ All notable changes to the Project Management Plugin will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.1] - 2026-05-13
+
+### Fixed
+
+- **Ambiguous assumption-marker wording in `/dr-plan` templates** — `plan-base.md`, `plan-bug-fix.md`, and `references/create-mode.md` described `[x]` and `[?]` as parallel markers ("Mark `[x]` when validated. Mark `[?]` when uncertain"), which led the plan-author Claude to write doubled-up forms like `- [ ] [x] text` and `- [ ] [?] text` for *both* validated and uncertain assumptions. Rewrote the Assumptions header in `plan-base.md` to spell out the three states explicitly: `- [ ] text` (pending), `- [ ] [?] text` (uncertain, surfaced by `/dr-plan answer questions`), `- [x] text` (validated). Clarified that `[x]` is the flipped checkbox, not a tag, and that validating a `[ ] [?]` line means flipping to `[x]` *and* dropping `[?]`. Updated `plan-bug-fix.md` and `create-mode.md` Phase 4 thinking-prompt with the same explicit forms.
+
 ## [1.9.0] - 2026-04-22
 
 ### Changed

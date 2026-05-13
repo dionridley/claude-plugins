@@ -85,7 +85,7 @@ Use extended thinking. Think about:
 
 - What exactly is being built, and how does it split into phases?
 - What exists today that the work modifies or extends?
-- What assumptions are you making — which are grounded in the PRD/codebase (`[x]`), which are uncertain (`[?]`)?
+- What assumptions are you making — which are grounded in the PRD/codebase (write as `- [x] text` — checkbox flipped, evidence cited), which are uncertain (write as `- [ ] [?] text` — pending checkbox + uncertain tag)?
 - What blocking questions must resolve before implementation can start (`[AWAITING]`)?
 - What non-blocking questions can be answered during implementation (`[OPEN]`)?
 - What could go wrong? Where do the risks concentrate?
