@@ -1,7 +1,7 @@
 ---
 name: dr-prd
-description: Creates or refines a Product Requirement Document (PRD) under _claude/prd/ with a structured discovery phase, adaptive sections based on feature type, and safe refinement with backup, diff preview, and linked-plan detection. Use when the user wants to draft or update a PRD. Supports traditional features and AI/LLM features (adds eval rubrics, model constraints, prompt specs, performance budgets, guardrails).
-disable-model-invocation: true
+description: Creates or refines a Product Requirement Document (PRD) under _claude/prd/ with a structured discovery phase, adaptive sections based on feature type, and safe refinement with backup, diff preview, and linked-plan detection. Use when the user writes `/dr-prd` anywhere in their message. Do NOT use for general discussion about drafting or updating a PRD without the explicit `/dr-prd` token. Supports traditional features and AI/LLM features (adds eval rubrics, model constraints, prompt specs, performance budgets, guardrails).
+disable-model-invocation: false
 allowed-tools: Read Write Edit Glob Grep AskUserQuestion
 effort: max
 argument-hint: [feature description OR @prd-file [refinement request]] [--no-confirm]
@@ -10,6 +10,13 @@ argument-hint: [feature description OR @prd-file [refinement request]] [--no-con
 # Create or Refine a Product Requirement Document
 
 This skill has two modes. Detect the mode from `$ARGUMENTS` first, then route to the correct reference file.
+
+## Trigger Validation
+
+Before mode detection, confirm this invocation is genuine and not conversational drift from an earlier `/dr-prd` use.
+
+- **If the user's current message contains the literal token `/dr-prd`** (anywhere in the message, not only at the start) → proceed.
+- **Otherwise** → stop. Ask: *"Did you want to run /dr-prd, or should we keep discussing this inline?"* Only continue if they confirm.
 
 ## Mode Detection
 
