@@ -5,6 +5,17 @@ All notable changes to the Project Management Plugin will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-06-18
+
+### Changed
+
+- **Model invocation enabled for `dr-prd`** — flipped `disable-model-invocation` from `true` to `false` so `/dr-prd` fires when the token appears anywhere in the message (mid-message), not only at line-start. Stricter than `dr-plan`'s trigger by design: the literal `/dr-prd` token is **required** — there is no "explicitly asks to write a PRD" fallback — to keep the skill from over-triggering on general PRD discussion now that model invocation is on. Description rewritten with an anchored positive trigger (the `/dr-prd` token) plus an explicit negative clause (no general PRD discussion without the token). Root `CLAUDE.md` notes updated to match (`dr-plan` and `dr-prd` now use `disable-model-invocation: false` with a Trigger Validation gate; `dr-init` and `dr-research` remain explicit-only).
+- **Commit-message bullet cap raised from 5 to 20 in `/dr-plan` SUMMARY mode** — `references/summary-mode.md` no longer caps the generated merge/squash commit message at ~5 bullets. The model applies the same "prioritize the most significant changes, skip trivia" judgment but may emit up to 20 bullets, without padding to hit the cap.
+
+### Added
+
+- **Trigger Validation block in `dr-prd/SKILL.md`** — runs before Mode Detection; proceeds only when the current message contains the literal `/dr-prd` token, otherwise briefly asks the user to confirm intent. Mirrors the `dr-plan` drift guard added in 1.9.0.
+
 ## [1.9.1] - 2026-05-13
 
 ### Fixed

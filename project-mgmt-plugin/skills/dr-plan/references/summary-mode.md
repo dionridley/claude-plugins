@@ -154,7 +154,7 @@ Synthesize from the plan — do not copy-paste phase blocks verbatim. The plan i
 ### Draft the commit message
 
 - **Title:** 3-6 words, imperative mood, no period (e.g., `Add user authentication`, `Fix event loading`).
-- **Bullets:** up to 5, past tense, `*` prefix, no period at end (e.g., `* Implemented login endpoint with JWT issuance`).
+- **Bullets:** up to 20, past tense, `*` prefix, no period at end (e.g., `* Implemented login endpoint with JWT issuance`). Don't pad to hit the cap — use only as many as the meaningful changes warrant.
 
 Prioritize the most significant changes. Skip trivia.
 
